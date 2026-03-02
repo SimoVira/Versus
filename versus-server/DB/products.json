@@ -1,0 +1,17 @@
+{
+  "_id": "ObjectId",
+  "name": "iPhone 15",
+  "category": "smartphone",
+  "brand": "Apple",
+  "price": 899,
+  "images": ["url1"],
+  "commonScore": 87,
+  "priceHistory": [
+    { "price": 929, "date": "2024-01-01" }
+  ],
+  "specs": {
+    "RAM": "6GB",
+    "batteria": "3877mAh",
+    "display": "6.1 pollici"
+  }
+}
