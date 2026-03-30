@@ -1,5 +1,5 @@
 "use strict";
-const _URL = "http://x.x.x.x:3000"  // IP del tuo portatile dove si trova il server | indirizzo ngrok pubblico per connettersi al server locale
+const _URL = "http://x.x.x.x:3000"  // IP portatile dove si trova il server | indirizzo ngrok pubblico per connettersi al server locale
 
 export async function inviaRichiesta(method: any, url: any = "", params: any = {}) {
     method = method.toUpperCase()
