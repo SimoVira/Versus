@@ -75,10 +75,12 @@ app.get("/api/products", async function (req, res, next) {
         filters.name = { $regex: req.query.search, $options: "i" };
 
     const client = new MongoClient(connectionString!);
+
     await client.connect().catch(function () {
         res.status(503).send("Errore di connessione al dbms");
         return;
     });
+    
     const collection = client.db(dbName).collection("products");
     const cmd = collection.find(filters).toArray();
     cmd.then(function (data) { res.send(data); });
