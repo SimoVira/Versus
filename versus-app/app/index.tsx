@@ -9,20 +9,20 @@ import { TechCategory } from "../types/Product";
 
 const CATEGORY_ICONS: Record<string, string> = {
     smartphone: "📱",
-    laptop:     "💻",
-    tablet:     "🖥️",
-    monitor:    "🖹",
-    cpu:        "🔲",
-    gpu:        "🎮",
-    cuffie:     "🎧",
+    laptop: "💻",
+    tablet: "🖥️",
+    monitor: "🖹",
+    cpu: "🔲",
+    gpu: "🎮",
+    cuffie: "🎧",
     smartwatch: "⌚",
 };
 
 export default function Home() {
     const router = useRouter();
     const [categories, setCategories] = useState<TechCategory[]>([]);
-    const [loading, setLoading]       = useState<boolean>(true);
-    const [error, setError]           = useState<string>("");
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string>("");
 
     useEffect(function () {
         loadCategories();
@@ -86,19 +86,19 @@ export default function Home() {
 }
 
 const styles = StyleSheet.create({
-    container:    { flex: 1, backgroundColor: "#F5F5F5", padding: 16, paddingTop: 60 },
-    centered:     { flex: 1, justifyContent: "center", alignItems: "center" },
-    title:        { fontSize: 36, fontWeight: "bold", color: "#6C63FF", marginBottom: 4 },
-    subtitle:     { fontSize: 16, color: "#888", marginBottom: 24 },
+    container: { flex: 1, backgroundColor: "#F5F5F5", padding: 16, paddingTop: 60 },
+    centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+    title: { fontSize: 36, fontWeight: "bold", color: "#6C63FF", marginBottom: 4 },
+    subtitle: { fontSize: 16, color: "#888", marginBottom: 24 },
     card: {
         flex: 1, margin: 8, backgroundColor: "#fff",
         borderRadius: 16, padding: 24,
         alignItems: "center", justifyContent: "center",
         elevation: 3,
     },
-    icon:         { fontSize: 40, marginBottom: 8 },
+    icon: { fontSize: 40, marginBottom: 8 },
     categoryName: { fontSize: 14, fontWeight: "600", color: "#333", textTransform: "capitalize" },
-    errorText:    { fontSize: 16, color: "red", marginBottom: 16 },
-    retryBtn:     { backgroundColor: "#6C63FF", padding: 12, borderRadius: 8 },
-    retryText:    { color: "#fff", fontWeight: "bold" },
+    errorText: { fontSize: 16, color: "red", marginBottom: 16 },
+    retryBtn: { backgroundColor: "#6C63FF", padding: 12, borderRadius: 8 },
+    retryText: { color: "#fff", fontWeight: "bold" },
 });

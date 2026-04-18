@@ -4,7 +4,7 @@ import { Product } from "../types/Product";
 export async function getProducts(category?: string, search?: string): Promise<Product[]> {
     const params: any = {};
     if (category) params.category = category;
-    if (search)   params.search   = search;
+    if (search) params.search = search;
 
     const res = await inviaRichiesta("GET", "/products", params);
     if (res?.status === 200) return res.data;

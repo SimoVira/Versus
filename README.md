@@ -33,8 +33,10 @@ versus/
 
 Crea il file `versus-app/.env`:
 ```env
-LocalURL = "http://TUO_IP:3000" //indirizzo ip della macchina su cui il server è in ascolto
-PublicURL = "" //url pubblico che genera NGROK
+#indirizzo ip della macchina su cui il server è in ascolto
+EXPO_PUBLIC_LOCAL_URL = "http://TUO_IP:3000" 
+#url pubblico che genera NGROK
+EXPO_PUBLIC_PUBLIC_URL = "" 
 ```
 
 ## 🔑 Variabili d'ambiente server
@@ -49,7 +51,7 @@ PORT=3000
 
 ## 🚀 Avvio del progetto su dispositivi connessi a rete UGUALE
 
-Servono **3 terminali** aperti in contemporanea.
+Servono **2 terminali** aperti in contemporanea.
 
 ### Terminale 1 — Avvia il server
 ```bash
@@ -60,7 +62,7 @@ Il server parte sulla porta `3000`.
 
 > ⚠️ L'IP del dispositivo su cui è in ascolto il server cambia ad ogni avvio — ricorda di aggiornarlo in .env del client!
 
-### Terminale 3 — Avvia l'app
+### Terminale 2 — Avvia l'app
 ```bash
 cd versus/versus-app
 npx expo start --clear
@@ -69,6 +71,8 @@ Scannerizza il QR con **Expo Go** dal telefono.
 
 
 ## 🚀 Avvio del progetto su dispositivi connessi a rete DIVERSA
+
+Servono **3 terminali** aperti in contemporanea.
 
 ### Terminale 1 — Avvia il server
 ```bash
