@@ -1,4 +1,6 @@
-export type TechCategory = 
+// types/Product.ts
+
+export type TechCategory =
     | "smartphone"
     | "laptop"
     | "tablet"
@@ -8,20 +10,14 @@ export type TechCategory =
     | "cuffie"
     | "smartwatch";
 
-export interface Product {
-    _id: string;
-    name: string;
-    brand: string;
-    category: TechCategory;
+export interface PriceHistory {
     price: number;
-    images: string[];
-    specs: SmartphoneSpecs | LaptopSpecs | TabletSpecs | MonitorSpecs | Record<string, any>;
-    score?: number;
+    date: string;
 }
 
-// Specs specifiche per categoria
+// Specs per categoria - campo libero ma tipizzato
 export interface SmartphoneSpecs {
-    ram: string;
+    RAM: string;
     storage: string;
     batteria: string;
     display: string;
@@ -31,7 +27,7 @@ export interface SmartphoneSpecs {
 }
 
 export interface LaptopSpecs {
-    ram: string;
+    RAM: string;
     storage: string;
     processore: string;
     display: string;
@@ -41,7 +37,7 @@ export interface LaptopSpecs {
 }
 
 export interface TabletSpecs {
-    ram: string;
+    RAM: string;
     storage: string;
     display: string;
     batteria: string;
@@ -57,6 +53,63 @@ export interface MonitorSpecs {
     connessioni: string[];
 }
 
+export interface CpuSpecs {
+    core: string;
+    thread: string;
+    frequenza: string;
+    socket: string;
+    tdp: string;
+}
+
+export interface GpuSpecs {
+    vram: string;
+    frequenza: string;
+    connessioni: string[];
+    tdp: string;
+}
+
+export interface CuffieSpecs {
+    tipo: string;           // over-ear, in-ear, on-ear
+    connessione: string;    // bluetooth, jack, usb-c
+    autonomia: string;
+    noiseCancelling: boolean;
+}
+
+export interface SmartwatchSpecs {
+    display: string;
+    autonomia: string;
+    os: string;
+    gps: boolean;
+    waterResistance: string;
+}
+
+// Unione di tutte le specs possibili
+export type ProductSpecs =
+    | SmartphoneSpecs
+    | LaptopSpecs
+    | TabletSpecs
+    | MonitorSpecs
+    | CpuSpecs
+    | GpuSpecs
+    | CuffieSpecs
+    | SmartwatchSpecs
+    | Record<string, any>; // fallback per categorie future
+
+// Modello principale - rispecchia il documento MongoDB
+export interface Product {
+    _id: string;
+    name: string;
+    brand: string;
+    category: TechCategory;
+    price: number;
+    images: string[];
+    commonScore: number;
+    priceHistory: PriceHistory[];
+    specs: ProductSpecs;
+    score?: number;         // aggiunto solo dalla risposta /compare
+}
+
+// Risposta generica della libreria
 export interface ApiResponse<T> {
     status: number;
     data?: T;
