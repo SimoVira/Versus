@@ -1,5 +1,6 @@
 "use strict";
-const _URL = ""  // IP portatile dove si trova il server (se client e server sulla stessa rete) | indirizzo ngrok pubblico per connettersi al server locale
+
+const _URL = process.env.LocalURL  // IP portatile dove si trova il server (se client e server sulla stessa rete) | indirizzo ngrok pubblico per connettersi al server locale
 
 export async function inviaRichiesta(method: any, url: any = "", params: any = {}) {
     method = method.toUpperCase()
