@@ -1,5 +1,3 @@
-// types/Product.ts
-
 export type TechCategory =
     | "smartphone"
     | "laptop"

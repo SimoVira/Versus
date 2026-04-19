@@ -80,7 +80,7 @@ app.get("/api/products", async function (req, res, next) {
         res.status(503).send("Errore di connessione al dbms");
         return;
     });
-    
+
     const collection = client.db(dbName).collection("products");
     const cmd = collection.find(filters).toArray();
     cmd.then(function (data) { res.send(data); });
@@ -91,13 +91,15 @@ app.get("/api/products", async function (req, res, next) {
 // GET /api/products/:id
 // Restituisce un singolo prodotto per _id
 app.get("/api/products/:id", async function (req, res, next) {
+    const _id = new ObjectId(req.params.id);
+
     const client = new MongoClient(connectionString!);
     await client.connect().catch(function () {
         res.status(503).send("Errore di connessione al dbms");
         return;
     });
     const collection = client.db(dbName).collection("products");
-    const cmd = collection.findOne({ _id: new ObjectId(req.params.id) });
+    const cmd = collection.findOne({ _id });
     cmd.then(function (data) {
         if (!data) res.status(404).send("Prodotto non trovato");
         else res.send(data);
@@ -127,7 +129,7 @@ app.post("/api/products", async function (req, res, next) {
 // PATCH /api/products/:id
 // Aggiorna campi specifici di un prodotto (es. prezzo)
 app.patch("/api/products/:id", async function (req, res, next) {
-    const _id    = new ObjectId(req.params.id);
+    const _id = new ObjectId(req.params.id);
     const fields = req.body;
 
     const client = new MongoClient(connectionString!);
@@ -180,8 +182,8 @@ app.post("/api/compare", async function (req, res, next) {
 
     try {
         const collection = client.db(dbName).collection("products");
-        const objectIds   = ids.map((id) => new ObjectId(id));
-        const products    = await collection.find({ _id: { $in: objectIds } }).toArray();
+        const objectIds = ids.map((id) => new ObjectId(id));
+        const products = await collection.find({ _id: { $in: objectIds } }).toArray();
 
         // Calcolo punteggio qualità/prezzo semplice:
         // score = 100 - (prezzo_prodotto / prezzo_massimo * 100)

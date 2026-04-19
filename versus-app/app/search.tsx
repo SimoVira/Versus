@@ -4,12 +4,13 @@ import {
     StyleSheet, ActivityIndicator, TextInput
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { getProducts } from "../api/productService";
+import { ProductService } from "../api/product-service";
 import { Product } from "../types/Product";
 
 export default function Search() {
     const router = useRouter();
     const { category } = useLocalSearchParams<{ category: string }>();
+    const productService = new ProductService();
 
     const [products, setProducts] = useState<Product[]>([]);
     const [search, setSearch] = useState<string>("");
@@ -24,7 +25,7 @@ export default function Search() {
         setLoading(true);
         setError("");
         try {
-            const data = await getProducts(category, search);
+            const data = await productService.getProducts(category, search);
             setProducts(data);
         } catch (err: any) {
             setError(err.message);
@@ -70,7 +71,7 @@ export default function Search() {
                             style={styles.card}
                             onPress={function () {
                                 router.push({
-                                    pathname: "/product/[id]",
+                                    pathname: "/products/[id]",
                                     params: { id: item._id }
                                 });
                             }}

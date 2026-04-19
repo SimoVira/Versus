@@ -4,7 +4,7 @@ import {
     StyleSheet, ActivityIndicator
 } from "react-native";
 import { useRouter } from "expo-router";
-import { getCategories } from "../api/categoryService";
+import { CategoryService } from "../api/category-service";
 import { TechCategory } from "../types/Product";
 
 const CATEGORY_ICONS: Record<string, string> = {
@@ -20,6 +20,8 @@ const CATEGORY_ICONS: Record<string, string> = {
 
 export default function Home() {
     const router = useRouter();
+    const categoryService = new CategoryService();
+
     const [categories, setCategories] = useState<TechCategory[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string>("");
@@ -32,7 +34,7 @@ export default function Home() {
         setLoading(true);
         setError("");
         try {
-            const data = await getCategories();
+            const data = await categoryService.getCategories();
             setCategories(data);
         } catch (err: any) {
             setError(err.message);
