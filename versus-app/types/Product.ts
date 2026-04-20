@@ -104,12 +104,22 @@ export interface Product {
     commonScore: number;
     priceHistory: PriceHistory[];
     specs: ProductSpecs;
-    score?: number;         // aggiunto solo dalla risposta /compare
 }
 
-// Risposta generica della libreria
-export interface ApiResponse<T> {
-    status: number;
-    data?: T;
-    err?: string;
+
+export interface GeminiAnalysis {
+    score1: number;
+    score2: number;
+    pros1: string[];
+    pros2: string[];
+    cons1: string[];
+    cons2: string[];
+    winner: 1 | 2;
+    verdict: string;
+}
+
+// Risposta specifica per /compare
+export interface CompareResponse {
+    products: [Product, Product];
+    geminiAnalysis: GeminiAnalysis;
 }

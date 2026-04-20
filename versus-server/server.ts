@@ -5,7 +5,7 @@ import dotenv from "dotenv";
 import { MongoClient, ObjectId } from "mongodb";
 import queryStringParser from "./queryStringParser";
 import cors from "cors";
-import { GoogleGenAI, Type } from "@google/genai";
+import { AiService } from "./AI-service";
 
 //B. configurazioni
 const app: express.Express = express();
@@ -14,7 +14,6 @@ dotenv.config({ path: ".env" });
 const connectionString = process.env.connectionStringLocal;
 const dbName = process.env.dbName;
 const PORT = parseInt(process.env.PORT!);
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
 //C. creazione ed avvio del server HTTP
 const server = http.createServer(app);
@@ -63,16 +62,12 @@ app.use("/", cors(corsOptions));
 // -----------------------------------------------------------------
 
 // GET /api/products
-// Restituisce tutti i prodotti, con filtri opzionali via query string
-// es: /api/products?category=smartphone
 app.get("/api/products", async function (req, res, next) {
     const filters: any = {};
 
-    // filtro per categoria
     if (req.query.category)
         filters.category = req.query.category;
 
-    // ricerca per nome (regex, case-insensitive)
     if (req.query.search)
         filters.name = { $regex: req.query.search, $options: "i" };
 
@@ -91,7 +86,6 @@ app.get("/api/products", async function (req, res, next) {
 });
 
 // GET /api/products/:id
-// Restituisce un singolo prodotto per _id
 app.get("/api/products/:id", async function (req, res, next) {
     const _id = new ObjectId(req.params.id);
 
@@ -111,8 +105,6 @@ app.get("/api/products/:id", async function (req, res, next) {
 });
 
 // POST /api/products
-// Aggiunge un nuovo prodotto
-// body: { name, category, brand, price, specs: {...}, images: [] }
 app.post("/api/products", async function (req, res, next) {
     const newProduct = req.body;
 
@@ -129,7 +121,6 @@ app.post("/api/products", async function (req, res, next) {
 });
 
 // PATCH /api/products/:id
-// Aggiorna campi specifici di un prodotto (es. prezzo)
 app.patch("/api/products/:id", async function (req, res, next) {
     const _id = new ObjectId(req.params.id);
     const fields = req.body;
@@ -147,7 +138,6 @@ app.patch("/api/products/:id", async function (req, res, next) {
 });
 
 // DELETE /api/products/:id
-// Elimina un prodotto
 app.delete("/api/products/:id", async function (req, res, next) {
     const client = new MongoClient(connectionString!);
     await client.connect().catch(function () {
@@ -164,49 +154,50 @@ app.delete("/api/products/:id", async function (req, res, next) {
 // -----------------------------------------------------------------
 // CONFRONTO (cuore di Versus)
 // -----------------------------------------------------------------
-
-// POST /api/compare
-// body: { ids: ["id1", "id2", ...] }
-// Restituisce i prodotti richiesti con un punteggio calcolato
 app.post("/api/compare", async function (req, res, next) {
-    const ids: string[] = req.body.ids;
+    const json: any = req.body;
+    const ids: string[] = json.ids;
 
     if (!ids || ids.length < 2) {
-        res.status(400).send("Servono almeno 2 prodotti da confrontare");
+        res.status(400).send({ err: "Seleziona almeno 2 prodotti da confrontare" });
         return;
     }
 
-    const client = new MongoClient(connectionString!);
-    await client.connect().catch(function () {
-        res.status(503).send("Errore di connessione al dbms");
+    // ── A. Recupero prodotti da MongoDB ──────────────────────
+    let p1: any, p2: any;
+    const mongoClient = new MongoClient(connectionString!);
+    try {
+        await mongoClient.connect();
+        const collection = mongoClient.db(dbName).collection("products");
+
+        p1 = await collection.findOne({ _id: new ObjectId(ids[0]) });
+        if (!p1) {
+            res.status(404).send({ err: "Prodotto 1 non trovato" });
+            return;
+        }
+
+        p2 = await collection.findOne({ _id: new ObjectId(ids[1]) });
+        if (!p2) {
+            res.status(404).send({ err: "Prodotto 2 non trovato" });
+            return;
+        }
+
+    } catch (err: any) {
+        console.error(err);
+        res.status(500).send({ err: "Errore durante l'estrazione dei prodotti: " + err.message });
         return;
+    } finally {
+        await mongoClient.close();
+    }
+
+    const aiService = new AiService();
+    aiService.compareProducts(p1, p2).then((compareResponse) => {
+        res.send(compareResponse);
+    }).catch((err: any) => {
+        console.error(err);
+        res.status(500).send({ err: "Errore durante l'analisi AI: " + err.message });
     });
 
-    try {
-        const collection = client.db(dbName).collection("products");
-        const objectIds = ids.map((id) => new ObjectId(id));
-        const products = await collection.find({ _id: { $in: objectIds } }).toArray();
-
-        // Calcolo punteggio qualità/prezzo semplice:
-        // score = 100 - (prezzo_prodotto / prezzo_massimo * 100)
-        // (il più economico prende il punteggio più alto)
-        const maxPrice = Math.max(...products.map((p: any) => p.price || 0));
-        const result = products.map((p: any) => ({
-            ...p,
-            score: maxPrice > 0
-                ? Math.round((1 - (p.price || 0) / maxPrice) * 100)
-                : 0
-        }));
-
-        // ordina dal punteggio più alto
-        result.sort((a: any, b: any) => b.score - a.score);
-        res.send(result);
-
-    } catch (err) {
-        res.status(500).send("Errore confronto: " + err);
-    } finally {
-        client.close();
-    }
 });
 
 // -----------------------------------------------------------------
@@ -214,7 +205,6 @@ app.post("/api/compare", async function (req, res, next) {
 // -----------------------------------------------------------------
 
 // GET /api/categories
-// Restituisce le categorie distinte presenti nel DB
 app.get("/api/categories", async function (req, res, next) {
     const client = new MongoClient(connectionString!);
     await client.connect().catch(function () {
@@ -238,3 +228,12 @@ app.use("/", function (err: Error, req: express.Request, res: express.Response, 
     res.status(500).send(err.message);
     console.log("******** ERRORE ********:\n" + err.stack);
 });
+
+
+
+// compareProducts: confronto tra due prodotti
+async function compareProducts(req: any, res: any): Promise<void> {
+
+
+
+}
