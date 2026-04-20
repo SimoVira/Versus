@@ -6,10 +6,16 @@
   "scripts": {
     "start": "nodemon server.ts"
   },
-  "keywords": ["nodejs", "Express", "MongoDB", "Versus"],
+  "keywords": [
+    "nodejs",
+    "Express",
+    "MongoDB",
+    "Versus"
+  ],
   "author": "Simone Virano",
   "license": "ISC",
   "dependencies": {
+    "@google/genai": "^1.50.1",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",

@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import { MongoClient, ObjectId } from "mongodb";
 import queryStringParser from "./queryStringParser";
 import cors from "cors";
+import { GoogleGenAI, Type } from "@google/genai";
 
 //B. configurazioni
 const app: express.Express = express();
@@ -13,6 +14,7 @@ dotenv.config({ path: ".env" });
 const connectionString = process.env.connectionStringLocal;
 const dbName = process.env.dbName;
 const PORT = parseInt(process.env.PORT!);
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
 //C. creazione ed avvio del server HTTP
 const server = http.createServer(app);
@@ -225,7 +227,6 @@ app.get("/api/categories", async function (req, res, next) {
     cmd.catch(function (err) { res.status(500).send("Errore query: " + err); });
     cmd.finally(function () { client.close(); });
 });
-
 
 //F. default - risorsa non trovata
 app.use("/", function (req, res, next) {
