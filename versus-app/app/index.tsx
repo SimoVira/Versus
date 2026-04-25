@@ -6,6 +6,7 @@ import {
 import { useRouter } from "expo-router";
 import { CategoryService } from "../api/category-service";
 import { TechCategory } from "../types/Product";
+import { AuthService } from "../api/auth-service";
 
 const CATEGORY_ICONS: Record<string, string> = {
     smartphone: "📱",
@@ -28,6 +29,12 @@ export default function Home() {
 
     useEffect(function () {
         loadCategories();
+    }, []);
+
+    useEffect(function () {
+        AuthService.isLoggedIn().then(function (logged) {
+            if (!logged) router.replace("/login");
+        });
     }, []);
 
     async function loadCategories() {

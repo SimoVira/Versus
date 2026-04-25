@@ -1,13 +1,22 @@
 "use strict";
 
-const _URL = process.env.EXPO_PUBLIC_LOCAL_URL ?? ""  // IP portatile dove si trova il server (se client e server sulla stessa rete) | indirizzo ngrok pubblico per connettersi al server locale
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { AuthService } from "./auth-service";
+import { router } from "expo-router";
 
+const _URL = process.env.EXPO_PUBLIC_LOCAL_URL ?? ""  // IP portatile dove si trova il server (se client e server sulla stessa rete) | indirizzo ngrok pubblico per connettersi al server locale
 export async function inviaRichiesta(method: any, url: any = "", params: any = {}) {
     method = method.toUpperCase()
     url = "/api" + url;
+    const TOKEN_JWT = await AuthService.getToken(); //metodo static
+
     let options: any = {
         "method": method,
-        "headers": {},
+        headers: {
+            "Content-Type": "application/json",
+            "ngrok-skip-browser-warning": "true",
+            ...(TOKEN_JWT ? { "Authorization": `Bearer ${TOKEN_JWT}` } : {}),
+        },
         "mode": "cors",                  // default
         "cache": "no-cache",             // default
         "credentials": "omit",    // default
@@ -66,6 +75,12 @@ export async function inviaRichiesta(method: any, url: any = "", params: any = {
         const response = await fetch(_URL + url, options);
         //leggo il body della risposta come semplice testo
         const text = await response.text();
+        if (response.status === 401) {
+           //elimino i dati di sessione e rimando al login
+            await AuthService.logout();
+            router.replace("/login"); // ← rimanda al login
+            return;
+        }
         if (!response.ok) {
             return { status: response.status, err: text }
         }

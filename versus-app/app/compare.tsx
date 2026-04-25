@@ -58,7 +58,6 @@ export default function Compare() {
             setLoadingMsg("Analisi AI in corso...");
             const res: CompareResponse = await compareService.compareProducts([id1, id2]);
 
-            console.log("Risposta confronto:", res);
             setProduct1(res.products[0]);
             setProduct2(res.products[1]);
             setGeminiAnalysis(res.geminiAnalysis); //aggiorna ma è asincrono quindi in score1Anim e score2Anim 

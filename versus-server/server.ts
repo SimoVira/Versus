@@ -5,15 +5,20 @@ import dotenv from "dotenv";
 import { MongoClient, ObjectId } from "mongodb";
 import queryStringParser from "./queryStringParser";
 import cors from "cors";
+import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 import { AiService } from "./AI-service";
 
 //B. configurazioni
 const app: express.Express = express();
 dotenv.config({ path: ".env" });
 
-const connectionString = process.env.connectionStringLocal;
-const dbName = process.env.dbName;
+const connectionString = process.env.connectionStringLocal!;
+const dbName = process.env.dbName!;
+const JWT_KEY = process.env.JWT_KEY!;
 const PORT = parseInt(process.env.PORT!);
+const TOKEN_EXPIRY = "7d";
+const SALT_ROUNDS = 10;
 
 //C. creazione ed avvio del server HTTP
 const server = http.createServer(app);
@@ -43,7 +48,7 @@ app.use("/", function (req, res, next) {
 });
 
 //4. Parsing dei parametri GET
-app.use("/", queryStringParser)
+app.use("/", queryStringParser);
 
 //5. Vincoli CORS - accetto richieste da qualunque client (React Native incluso)
 const corsOptions = {
@@ -54,8 +59,129 @@ const corsOptions = {
 };
 app.use("/", cors(corsOptions));
 
+// -----------------------------------------------------------------
+// AUTH
+// -----------------------------------------------------------------
+
+// POST /api/register
+app.post("/api/register", async function (req, res, next) {
+    const { name, email, password } = req.body;
+
+    console.log("body ricevuto:", { name, email, password });
+
+    try {
+        const client = new MongoClient(connectionString);
+        await client.connect();
+        console.log("db connesso");
+
+        const collection = client.db(dbName).collection("users");
+
+        const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
+        console.log("password hashata");
+
+        const data = await collection.insertOne({
+            name, email,
+            password: hashedPassword,
+            createdAt: new Date(),
+        });
+        console.log("utente inserito:", data.insertedId);
+
+        const token = jwt.sign(
+            { userId: data.insertedId.toString(), email },
+            JWT_KEY,
+            { expiresIn: TOKEN_EXPIRY }
+        );
+        console.log("token generato");
+
+        await client.close();
+        res.status(201).send({ token, user: { id: data.insertedId, email, name } });
+
+    } catch (err: any) {
+        console.error("ERRORE REGISTER:", err.message);
+        res.status(500).send({ err: err.message });
+    }
+});
+
+
+// POST /api/login
+app.post("/api/login", async function (req, res, next) {
+    const { email, password } = req.body;
+
+    const client = new MongoClient(connectionString);
+    await client.connect().catch(function () {
+        res.status(503).send({ err: "Errore di connessione al dbms" });
+        return;
+    });
+
+    const collection = client.db(dbName).collection("users");
+    const cmd = collection.findOne({ email });
+
+    cmd.then(async function (user) {
+        if (!user) {
+            res.status(401).send({ err: "Credenziali non valide" });
+            return;
+        }
+
+        const passwordMatch = await bcrypt.compare(password, user.password);
+        if (!passwordMatch) {
+            res.status(401).send({ err: "Credenziali non valide" });
+            return;
+        }
+
+        const token = jwt.sign(
+            { userId: user._id.toString(), email: user.email },
+            JWT_KEY,
+            { expiresIn: TOKEN_EXPIRY }
+        );
+
+        res.status(200).send({
+            token,
+            user: { id: user._id, email: user.email, name: user.name }
+        });
+    });
+    cmd.catch(function (err: any) { res.status(500).send({ err: "Errore query: " + err }); });
+    cmd.finally(function () { client.close(); });
+});
+
+// MIDDLEWARE — verifica JWT per tutte le route /api/*
+app.use("/api", function (req, res, next) {
+    const authHeader = req.headers["authorization"];
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        res.status(401).send({ err: "Token mancante o formato non valido" });
+        return;
+    }
+
+    const token: any = authHeader.split(" ")[1];
+
+    try {
+        const payload = jwt.verify(token, JWT_KEY);
+        (req as any).user = payload;
+        next();
+    } catch (err) {
+        res.status(401).send({ err: "Token non valido o scaduto" });
+    }
+});
 
 //E. gestione delle risorse dinamiche
+
+// -----------------------------------------------------------------
+// CATEGORIE
+// -----------------------------------------------------------------
+
+// GET /api/categories
+app.get("/api/categories", async function (req, res, next) {
+    const client = new MongoClient(connectionString);
+    await client.connect().catch(function () {
+        res.status(503).send("Errore di connessione al dbms");
+        return;
+    });
+    const collection = client.db(dbName).collection("products");
+    const cmd = collection.distinct("category");
+    cmd.then(function (data) { res.send(data); });
+    cmd.catch(function (err) { res.status(500).send("Errore query: " + err); });
+    cmd.finally(function () { client.close(); });
+});
 
 // -----------------------------------------------------------------
 // PRODOTTI
@@ -71,8 +197,7 @@ app.get("/api/products", async function (req, res, next) {
     if (req.query.search)
         filters.name = { $regex: req.query.search, $options: "i" };
 
-    const client = new MongoClient(connectionString!);
-
+    const client = new MongoClient(connectionString);
     await client.connect().catch(function () {
         res.status(503).send("Errore di connessione al dbms");
         return;
@@ -89,7 +214,7 @@ app.get("/api/products", async function (req, res, next) {
 app.get("/api/products/:id", async function (req, res, next) {
     const _id = new ObjectId(req.params.id);
 
-    const client = new MongoClient(connectionString!);
+    const client = new MongoClient(connectionString);
     await client.connect().catch(function () {
         res.status(503).send("Errore di connessione al dbms");
         return;
@@ -108,7 +233,7 @@ app.get("/api/products/:id", async function (req, res, next) {
 app.post("/api/products", async function (req, res, next) {
     const newProduct = req.body;
 
-    const client = new MongoClient(connectionString!);
+    const client = new MongoClient(connectionString);
     await client.connect().catch(function () {
         res.status(503).send("Errore di connessione al dbms");
         return;
@@ -125,7 +250,7 @@ app.patch("/api/products/:id", async function (req, res, next) {
     const _id = new ObjectId(req.params.id);
     const fields = req.body;
 
-    const client = new MongoClient(connectionString!);
+    const client = new MongoClient(connectionString);
     await client.connect().catch(function () {
         res.status(503).send("Errore di connessione al dbms");
         return;
@@ -139,7 +264,7 @@ app.patch("/api/products/:id", async function (req, res, next) {
 
 // DELETE /api/products/:id
 app.delete("/api/products/:id", async function (req, res, next) {
-    const client = new MongoClient(connectionString!);
+    const client = new MongoClient(connectionString);
     await client.connect().catch(function () {
         res.status(503).send("Errore di connessione al dbms");
         return;
@@ -163,9 +288,9 @@ app.post("/api/compare", async function (req, res, next) {
         return;
     }
 
-    // ── A. Recupero prodotti da MongoDB ──────────────────────
+    // ── Recupero prodotti da MongoDB ─────────────────────────
     let p1: any, p2: any;
-    const mongoClient = new MongoClient(connectionString!);
+    const mongoClient = new MongoClient(connectionString);
     try {
         await mongoClient.connect();
         const collection = mongoClient.db(dbName).collection("products");
@@ -181,7 +306,6 @@ app.post("/api/compare", async function (req, res, next) {
             res.status(404).send({ err: "Prodotto 2 non trovato" });
             return;
         }
-
     } catch (err: any) {
         console.error(err);
         res.status(500).send({ err: "Errore durante l'estrazione dei prodotti: " + err.message });
@@ -197,25 +321,6 @@ app.post("/api/compare", async function (req, res, next) {
         console.error(err);
         res.status(500).send({ err: "Errore durante l'analisi AI: " + err.message });
     });
-
-});
-
-// -----------------------------------------------------------------
-// CATEGORIE
-// -----------------------------------------------------------------
-
-// GET /api/categories
-app.get("/api/categories", async function (req, res, next) {
-    const client = new MongoClient(connectionString!);
-    await client.connect().catch(function () {
-        res.status(503).send("Errore di connessione al dbms");
-        return;
-    });
-    const collection = client.db(dbName).collection("products");
-    const cmd = collection.distinct("category");
-    cmd.then(function (data) { res.send(data); });
-    cmd.catch(function (err) { res.status(500).send("Errore query: " + err); });
-    cmd.finally(function () { client.close(); });
 });
 
 //F. default - risorsa non trovata
@@ -228,12 +333,3 @@ app.use("/", function (err: Error, req: express.Request, res: express.Response, 
     res.status(500).send(err.message);
     console.log("******** ERRORE ********:\n" + err.stack);
 });
-
-
-
-// compareProducts: confronto tra due prodotti
-async function compareProducts(req: any, res: any): Promise<void> {
-
-
-
-}
