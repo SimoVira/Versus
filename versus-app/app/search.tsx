@@ -1,12 +1,24 @@
 import { useEffect, useState } from "react";
 import {
     View, Text, FlatList, TouchableOpacity,
-    StyleSheet, ActivityIndicator, TextInput,
-    Animated
+    StyleSheet, ActivityIndicator, TextInput, StatusBar
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ProductService } from "../api/product-service";
 import { Product } from "../types/Product";
+
+const C = {
+    bg:          "#08080F",
+    card:        "#111118",
+    border:      "#1C1C2E",
+    lime:        "#C8F135",
+    limeDim:     "#8AAF22",
+    red:         "#FF3B5C",
+    textPrimary: "#EEEEF8",
+    textSub:     "#7070A0",
+    textDim:     "#3A3A5C",
+    inputBg:     "#0E0E1A",
+};
 
 export default function Search() {
     const router = useRouter();
@@ -14,9 +26,9 @@ export default function Search() {
     const productService = new ProductService();
 
     const [products, setProducts] = useState<Product[]>([]);
-    const [search, setSearch] = useState<string>("");
-    const [loading, setLoading] = useState<boolean>(true);
-    const [error, setError] = useState<string>("");
+    const [search, setSearch]     = useState<string>("");
+    const [loading, setLoading]   = useState<boolean>(true);
+    const [error, setError]       = useState<string>("");
     const [selected, setSelected] = useState<Product[]>([]);
 
     useEffect(function () {
@@ -39,15 +51,8 @@ export default function Search() {
     function toggleSelect(product: Product) {
         setSelected(function (prev) {
             const alreadySelected = prev.find(function (p) { return p._id === product._id; });
-
-            if (alreadySelected) {
-                // Deseleziona
-                return prev.filter(function (p) { return p._id !== product._id; });
-            }
-            if (prev.length >= 2) {
-                // Max 2 prodotti: rimpiazza il secondo
-                return [prev[0], product];
-            }
+            if (alreadySelected) return prev.filter(function (p) { return p._id !== product._id; });
+            if (prev.length >= 2) return [prev[0], product];
             return [...prev, product];
         });
     }
@@ -66,12 +71,14 @@ export default function Search() {
 
     if (loading) return (
         <View style={styles.centered}>
-            <ActivityIndicator size="large" color="#6C63FF" />
+            <StatusBar barStyle="light-content" />
+            <ActivityIndicator size="large" color={C.lime} />
         </View>
     );
 
     if (error) return (
         <View style={styles.centered}>
+            <StatusBar barStyle="light-content" />
             <Text style={styles.errorText}>{error}</Text>
             <TouchableOpacity onPress={loadProducts} style={styles.retryBtn}>
                 <Text style={styles.retryText}>Riprova</Text>
@@ -81,18 +88,26 @@ export default function Search() {
 
     return (
         <View style={styles.container}>
-            <Text style={styles.title}>{category}</Text>
+            <StatusBar barStyle="light-content" />
 
-            {/* Hint contestuale */}
-            <Text style={styles.hint}>
-                {selected.length === 0 && "Seleziona due prodotti da confrontare"}
-                {selected.length === 1 && "Seleziona ancora un prodotto"}
-                {selected.length === 2 && "Pronti per il confronto!"}
-            </Text>
+            <View style={styles.header}>
+                <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+                    <Text style={styles.backArrow}>↩</Text>
+                </TouchableOpacity>
+                <View style={styles.headerText}>
+                    <Text style={styles.title}>{category}</Text>
+                    <Text style={styles.hint}>
+                        {selected.length == 0 && "Seleziona due prodotti"}
+                        {selected.length == 1 && "Seleziona ancora un prodotto"}
+                        {selected.length == 2 && "Pronti per il confronto ✦"}
+                    </Text>
+                </View>
+            </View>
 
             <TextInput
                 style={styles.searchInput}
                 placeholder="Cerca prodotto..."
+                placeholderTextColor={C.textPrimary}
                 value={search}
                 onChangeText={setSearch}
                 onSubmitEditing={loadProducts}
@@ -102,9 +117,10 @@ export default function Search() {
             <FlatList
                 data={products}
                 keyExtractor={function (item) { return item._id; }}
-                contentContainerStyle={{ paddingBottom: selected.length > 0 ? 110 : 16 }}
+                contentContainerStyle={{ paddingBottom: selected.length > 0 ? 140 : 24 }}
+                showsVerticalScrollIndicator={false}
                 renderItem={function ({ item }) {
-                    const selIndex = getSelectionIndex(item._id);
+                    const selIndex   = getSelectionIndex(item._id);
                     const isSelected = selIndex !== -1;
 
                     return (
@@ -115,19 +131,17 @@ export default function Search() {
                         >
                             <View style={styles.cardRow}>
                                 <View style={styles.cardInfo}>
-                                    <Text style={styles.brand}>{item.brand}</Text>
+                                    <Text style={styles.brand}>{item.brand.toUpperCase()}</Text>
                                     <Text style={styles.name}>{item.name}</Text>
                                     <Text style={styles.price}>€ {item.price}</Text>
                                 </View>
 
                                 <View style={styles.rightColumn}>
-                                    {/* Badge selezione */}
                                     {isSelected && (
                                         <View style={styles.selectionBadge}>
                                             <Text style={styles.selectionBadgeText}>{selIndex + 1}</Text>
                                         </View>
                                     )}
-                                    {/* Score */}
                                     <View style={[styles.scoreBadge, isSelected && styles.scoreBadgeSelected]}>
                                         <Text style={styles.scoreText}>{item.commonScore}</Text>
                                     </View>
@@ -141,32 +155,32 @@ export default function Search() {
                 }
             />
 
-            {/* Barra confronto sticky */}
             {selected.length > 0 && (
                 <View style={styles.compareBar}>
                     <View style={styles.compareSlots}>
-                        {/* Slot 1 */}
+
                         <View style={[styles.slot, selected[0] && styles.slotFilled]}>
-                            {selected[0]
-                                ? <>
+                            {selected[0] ? (
+                                <>
                                     <Text style={styles.slotNumber}>①</Text>
                                     <Text style={styles.slotName} numberOfLines={1}>{selected[0].name}</Text>
                                 </>
-                                : <Text style={styles.slotEmpty}>—</Text>
-                            }
+                            ) : (
+                                <Text style={styles.slotEmpty}>—</Text>
+                            )}
                         </View>
 
                         <Text style={styles.vsText}>VS</Text>
 
-                        {/* Slot 2 */}
                         <View style={[styles.slot, selected[1] && styles.slotFilled]}>
-                            {selected[1]
-                                ? <>
+                            {selected[1] ? (
+                                <>
                                     <Text style={styles.slotNumber}>②</Text>
                                     <Text style={styles.slotName} numberOfLines={1}>{selected[1].name}</Text>
                                 </>
-                                : <Text style={styles.slotEmpty}>—</Text>
-                            }
+                            ) : (
+                                <Text style={styles.slotEmpty}>—</Text>
+                            )}
                         </View>
                     </View>
 
@@ -174,6 +188,7 @@ export default function Search() {
                         style={[styles.compareBtn, selected.length < 2 && styles.compareBtnDisabled]}
                         onPress={handleCompare}
                         disabled={selected.length < 2}
+                        activeOpacity={0.85}
                     >
                         <Text style={styles.compareBtnText}>Confronta</Text>
                     </TouchableOpacity>
@@ -184,83 +199,95 @@ export default function Search() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: "#F5F5F5", padding: 16, paddingTop: 60 },
-    centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+    container: { flex: 1, backgroundColor: C.bg, paddingHorizontal: 20, paddingTop: 60 },
+    centered:  { flex: 1, backgroundColor: C.bg, justifyContent: "center", alignItems: "center" },
 
-    title: { fontSize: 28, fontWeight: "bold", color: "#6C63FF", marginBottom: 4, textTransform: "capitalize" },
-    hint: { fontSize: 13, color: "#999", marginBottom: 12 },
+    header:     { flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 20 },
+    backBtn:    {
+        backgroundColor: C.card, borderRadius: 12, borderWidth: 1,
+        borderColor: C.border, width: 44, height: 44,
+        justifyContent: "center", alignItems: "center",
+    },
+    backArrow:  { color: C.lime, fontSize: 30 },
+    headerText: { flex: 1 },
+    title:      { fontSize: 26, fontWeight: "900", color: C.textPrimary, textTransform: "capitalize" },
+    hint:       { fontSize: 12, color: C.textSub, marginTop: 2 },
 
     searchInput: {
-        backgroundColor: "#fff", borderRadius: 12, padding: 12,
-        fontSize: 16, marginBottom: 16, elevation: 2
+        backgroundColor: C.inputBg,
+        borderRadius: 14,
+        borderWidth: 1,
+        borderColor: C.border,
+        paddingHorizontal: 16,
+        paddingVertical: 13,
+        fontSize: 15,
+        color: C.textPrimary,
+        marginBottom: 16,
     },
 
-    // Card
     card: {
-        backgroundColor: "#fff", borderRadius: 16, padding: 16,
-        marginBottom: 12, elevation: 3,
-        borderWidth: 2, borderColor: "transparent"
+        backgroundColor: C.card,
+        borderRadius: 16,
+        borderWidth: 1,
+        borderColor: C.border,
+        padding: 16,
+        marginBottom: 10,
     },
     cardSelected: {
-        borderColor: "#6C63FF",
-        backgroundColor: "#F3F2FF",
+        borderColor: C.limeDim,
+        backgroundColor: "#0F1A0A",
     },
-    cardRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+    cardRow:  { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
     cardInfo: { flex: 1 },
-    brand: { fontSize: 12, color: "#888", marginBottom: 2 },
-    name: { fontSize: 16, fontWeight: "600", color: "#333", marginBottom: 4 },
-    price: { fontSize: 18, fontWeight: "bold", color: "#6C63FF" },
+    brand:    { fontSize: 10, color: C.textSub, letterSpacing: 1.5, marginBottom: 4 },
+    name:     { fontSize: 16, fontWeight: "700", color: C.textPrimary, marginBottom: 6 },
+    price:    { fontSize: 18, fontWeight: "800", color: C.lime },
 
-    rightColumn: { alignItems: "center", gap: 6 },
-    selectionBadge: {
-        backgroundColor: "#6C63FF", borderRadius: 50,
-        width: 22, height: 22, justifyContent: "center", alignItems: "center"
+    rightColumn:        { alignItems: "center", gap: 6 },
+    selectionBadge:     {
+        backgroundColor: C.lime, borderRadius: 50,
+        width: 22, height: 22, justifyContent: "center", alignItems: "center",
     },
-    selectionBadgeText: { color: "#fff", fontWeight: "bold", fontSize: 12 },
-
-    scoreBadge: {
-        backgroundColor: "#6C63FF", borderRadius: 50,
-        width: 50, height: 50, justifyContent: "center", alignItems: "center"
+    selectionBadgeText: { color: "#000", fontWeight: "800", fontSize: 11 },
+    scoreBadge:         {
+        backgroundColor: C.border, borderRadius: 50,
+        width: 50, height: 50, justifyContent: "center", alignItems: "center",
     },
-    scoreBadgeSelected: { backgroundColor: "#4B44CC" },
-    scoreText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+    scoreBadgeSelected: { backgroundColor: C.limeDim },
+    scoreText:          { color: C.textPrimary, fontWeight: "800", fontSize: 15 },
 
-    emptyText: { textAlign: "center", color: "#888", marginTop: 40, fontSize: 16 },
-    errorText: { fontSize: 16, color: "red", marginBottom: 16 },
-    retryBtn: { backgroundColor: "#6C63FF", padding: 12, borderRadius: 8 },
-    retryText: { color: "#fff", fontWeight: "bold" },
+    emptyText: { textAlign: "center", color: C.textSub, marginTop: 48, fontSize: 15 },
+    errorText: { fontSize: 16, color: C.red, marginBottom: 16, textAlign: "center" },
+    retryBtn:  { backgroundColor: C.lime, padding: 12, borderRadius: 10 },
+    retryText: { color: "#000", fontWeight: "bold" },
 
-    // Barra confronto
     compareBar: {
         position: "absolute", bottom: 0, left: 0, right: 0,
-        backgroundColor: "#fff",
-        borderTopLeftRadius: 20, borderTopRightRadius: 20,
-        paddingHorizontal: 16, paddingVertical: 14,
-        elevation: 12,
-        shadowColor: "#000", shadowOffset: { width: 0, height: -3 },
-        shadowOpacity: 0.1, shadowRadius: 8,
+        backgroundColor: C.card,
+        borderTopLeftRadius: 24, borderTopRightRadius: 24,
+        borderTopWidth: 1, borderColor: C.border,
+        paddingHorizontal: 20, paddingVertical: 16,
         gap: 12,
+        shadowColor: "#000", shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 0.4, shadowRadius: 12,
+        elevation: 16,
     },
-    compareSlots: {
-        flexDirection: "row", alignItems: "center", gap: 8
-    },
+    compareSlots: { flexDirection: "row", alignItems: "center", gap: 8 },
     slot: {
-        flex: 1, backgroundColor: "#F5F5F5", borderRadius: 10,
-        padding: 8, alignItems: "center", minHeight: 44, justifyContent: "center",
-        borderWidth: 1, borderColor: "#E0E0E0"
+        flex: 1, backgroundColor: C.bg, borderRadius: 12,
+        padding: 10, alignItems: "center", minHeight: 48,
+        justifyContent: "center", borderWidth: 1, borderColor: C.border,
     },
-    slotFilled: {
-        backgroundColor: "#F3F2FF", borderColor: "#6C63FF"
-    },
-    slotNumber: { fontSize: 14, color: "#6C63FF" },
-    slotName: { fontSize: 12, fontWeight: "600", color: "#333", textAlign: "center" },
-    slotEmpty: { fontSize: 20, color: "#CCC" },
-    vsText: { fontSize: 13, fontWeight: "bold", color: "#999" },
+    slotFilled:   { backgroundColor: "#0F1A0A", borderColor: C.limeDim },
+    slotNumber:   { fontSize: 14, color: C.lime },
+    slotName:     { fontSize: 12, fontWeight: "600", color: C.textPrimary, textAlign: "center" },
+    slotEmpty:    { fontSize: 20, color: C.textDim },
+    vsText:       { fontSize: 12, fontWeight: "800", color: C.textDim, letterSpacing: 1 },
 
-    compareBtn: {
-        backgroundColor: "#6C63FF", borderRadius: 14,
-        paddingVertical: 14, alignItems: "center"
+    compareBtn:         {
+        backgroundColor: C.lime, borderRadius: 14,
+        paddingVertical: 15, alignItems: "center",
     },
-    compareBtnDisabled: { backgroundColor: "#C4C1F0" },
-    compareBtnText: { color: "#fff", fontWeight: "bold", fontSize: 16 },
+    compareBtnDisabled: { backgroundColor: C.limeDim, opacity: 0.4 },
+    compareBtnText:     { color: "#000", fontWeight: "800", fontSize: 16 },
 });

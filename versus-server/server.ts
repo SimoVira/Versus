@@ -67,31 +67,25 @@ app.use("/", cors(corsOptions));
 app.post("/api/register", async function (req, res, next) {
     const { name, email, password } = req.body;
 
-    console.log("body ricevuto:", { name, email, password });
-
     try {
         const client = new MongoClient(connectionString);
         await client.connect();
-        console.log("db connesso");
 
         const collection = client.db(dbName).collection("users");
 
         const hashedPassword = await bcrypt.hash(password, SALT_ROUNDS);
-        console.log("password hashata");
 
         const data = await collection.insertOne({
             name, email,
             password: hashedPassword,
             createdAt: new Date(),
         });
-        console.log("utente inserito:", data.insertedId);
 
         const token = jwt.sign(
             { userId: data.insertedId.toString(), email },
             JWT_KEY,
             { expiresIn: TOKEN_EXPIRY }
         );
-        console.log("token generato");
 
         await client.close();
         res.status(201).send({ token, user: { id: data.insertedId, email, name } });
