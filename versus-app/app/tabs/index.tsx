@@ -4,9 +4,9 @@ import {
     StyleSheet, ActivityIndicator, Alert, StatusBar
 } from "react-native";
 import { useRouter } from "expo-router";
-import { CategoryService } from "../api/category-service";
-import { TechCategory } from "../types/Product";
-import { AuthService } from "../api/auth-service";
+import { CategoryService } from "../../api/category-service";
+import { TechCategory } from "../../types/Product";
+import { AuthService } from "../../api/auth-service";
 
 const C = {
     bg:          "#08080F",

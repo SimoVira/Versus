@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { inviaRichiesta } from "./client";
+import { inviaRichiesta } from "./libreria";
 
 const TOKEN_KEY = "versus_token"; //NOME CHIAVE per salvare il token JWT su AsyncStorage
 const USER_KEY  = "versus_user";

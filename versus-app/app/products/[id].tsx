@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { ProductService } from "../../api/product-service";
 import { useLocalSearchParams, router } from "expo-router";
-import { inviaRichiesta } from "../../api/client";
+import { inviaRichiesta } from "../../api/libreria";
 import { Product } from "../../types/Product";
 
 const { width } = Dimensions.get("window");

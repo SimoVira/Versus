@@ -1,4 +1,4 @@
-import { inviaRichiesta } from "./client";
+import { inviaRichiesta } from "./libreria";
 import { CompareResponse } from "../types/Product";
 
 export class CompareService {

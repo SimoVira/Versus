@@ -123,7 +123,7 @@ app.post("/api/login", async function (req, res, next) {
         }
 
         const token = jwt.sign(
-            { userId: user._id.toString(), email: user.email },
+            { userId: user._id.toString(), email: user.email }, // payload
             JWT_KEY,
             { expiresIn: TOKEN_EXPIRY }
         );
@@ -150,7 +150,7 @@ app.use("/api", function (req, res, next) {
 
     try {
         const payload = jwt.verify(token, JWT_KEY);
-        (req as any).user = payload;
+        (req as any).user = payload; // aggiungo il payload del token (dati dell'utente loggato) alla request per ogni route protetta
         next();
     } catch (err) {
         res.status(401).send({ err: "Token non valido o scaduto" });
@@ -158,6 +158,8 @@ app.use("/api", function (req, res, next) {
 });
 
 //E. gestione delle risorse dinamiche
+
+
 
 // -----------------------------------------------------------------
 // CATEGORIE
@@ -176,6 +178,8 @@ app.get("/api/categories", async function (req, res, next) {
     cmd.catch(function (err) { res.status(500).send("Errore query: " + err); });
     cmd.finally(function () { client.close(); });
 });
+
+
 
 // -----------------------------------------------------------------
 // PRODOTTI
@@ -269,6 +273,106 @@ app.delete("/api/products/:id", async function (req, res, next) {
     cmd.catch(function (err) { res.status(500).send("Errore eliminazione: " + err); });
     cmd.finally(function () { client.close(); });
 });
+
+
+
+// -----------------------------------------------------------------
+// PREFERITI
+// -----------------------------------------------------------------
+
+// POST /api/favorites/:productId  — toggle (aggiunge o rimuove)
+app.post("/api/favorites/:productId", async function (req, res, next) {
+    const userId = (req as any).user.userId;   // dal token JWT
+    const productId = req.params.productId;
+
+    const client = new MongoClient(connectionString);
+    await client.connect().catch(function () {
+        res.status(503).send({ err: "Errore di connessione al dbms" });
+        return;
+    });
+
+    const collection = client.db(dbName).collection("users");
+
+    // Controlla se è già nei preferiti
+    const user = await collection.findOne({ _id: new ObjectId(userId) });
+    if (!user) {
+        await client.close();
+        res.status(404).send({ err: "Utente non trovato" });
+        return;
+    }
+
+    const favorites: string[] = user.favorites ?? [];
+    const alreadyFavorite = favorites.includes(productId);
+
+    // Toggle: $pull se esiste, $addToSet se non esiste
+    const update: any = alreadyFavorite
+        ? { $pull: { favorites: productId } }
+        : { $addToSet: { favorites: productId } };
+
+    const cmd = collection.updateOne({ _id: new ObjectId(userId) }, update);
+    cmd.then(function () {
+        const updated = alreadyFavorite
+            ? favorites.filter((id) => id !== productId)
+            : [...favorites, productId];
+        res.status(200).send({ favorites: updated, isFavorite: !alreadyFavorite });
+    });
+    cmd.catch(function (err: any) { res.status(500).send({ err: "Errore aggiornamento: " + err }); });
+    cmd.finally(function () { client.close(); });
+});
+
+// GET /api/favorites  — restituisce i prodotti preferiti completi
+app.get("/api/favorites", async function (req, res, next) {
+    const userId = (req as any).user.userId;
+
+    const client = new MongoClient(connectionString);
+    await client.connect().catch(function () {
+        res.status(503).send({ err: "Errore di connessione al dbms" });
+        return;
+    });
+
+    const db_ref = client.db(dbName);
+    const collectionUsers = db_ref.collection("users");
+    const collectionProducts = db_ref.collection("products");
+
+    const user = await collectionUsers.findOne({ _id: new ObjectId(userId) });
+    if (!user || !user.favorites || user.favorites.length === 0) {
+        await client.close();
+        res.status(200).send([]);
+        return;
+    }
+
+    const objectIds = user.favorites.map((id: string) => new ObjectId(id));
+    const cmd = collectionProducts.find({ _id: { $in: objectIds } }).toArray();
+    cmd.then(function (data) { res.status(200).send(data); });
+    cmd.catch(function (err: any) { res.status(500).send({ err: "Errore query: " + err }); });
+    cmd.finally(function () { client.close(); });
+});
+
+// GET /api/favorites/check/:productId  — controlla se è nei preferiti
+app.get("/api/favorites/check/:productId", async function (req, res, next) {
+    const userId = (req as any).user.userId;
+    const productId = req.params.productId;
+
+    const client = new MongoClient(connectionString);
+    await client.connect().catch(function () {
+        res.status(503).send({ err: "Errore di connessione al dbms" });
+        return;
+    });
+
+    const users = client.db(dbName).collection("users");
+    const cmd = users.findOne(
+        { _id: new ObjectId(userId) },
+        { projection: { favorites: 1 } }
+    );
+    cmd.then(function (user) {
+        const isFavorite = user?.favorites?.includes(productId) ?? false;
+        res.status(200).send({ isFavorite });
+    });
+    cmd.catch(function (err: any) { res.status(500).send({ err: "Errore query: " + err }); });
+    cmd.finally(function () { client.close(); });
+});
+
+
 
 // -----------------------------------------------------------------
 // CONFRONTO (cuore di Versus)

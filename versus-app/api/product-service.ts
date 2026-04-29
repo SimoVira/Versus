@@ -1,4 +1,4 @@
-import { inviaRichiesta } from "./client";
+import { inviaRichiesta } from "./libreria";
 import { Product } from "../types/Product";
 
 export class ProductService {
