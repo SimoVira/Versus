@@ -2,10 +2,9 @@ import { Tabs } from "expo-router";
 import { Text } from "react-native";
 
 const C = {
-    bg:      "#08080F",
-    card:    "#111118",
-    border:  "#1C1C2E",
-    lime:    "#C8F135",
+    card: "#111118",
+    border: "#1C1C2E",
+    lime: "#C8F135",
     textSub: "#7070A0",
 };
 
@@ -30,7 +29,7 @@ export default function TabLayout() {
                     paddingBottom: 10,
                     paddingTop: 8,
                 },
-                tabBarActiveTintColor:   C.lime,
+                tabBarActiveTintColor: C.lime,
                 tabBarInactiveTintColor: C.textSub,
                 tabBarLabelStyle: {
                     fontSize: 11,
@@ -51,6 +50,13 @@ export default function TabLayout() {
                 options={{
                     title: "Preferiti",
                     tabBarIcon: ({ focused }) => <TabIcon emoji="♥" focused={focused} />,
+                }}
+            />
+            <Tabs.Screen
+                name="history"
+                options={{
+                    title: "Storico",
+                    tabBarIcon: ({ focused }) => <TabIcon emoji="◷" focused={focused} />,
                 }}
             />
         </Tabs>
