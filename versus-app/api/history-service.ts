@@ -1,30 +1,30 @@
 import { inviaRichiesta } from "./libreria";
+import { CompareResponse } from "../types/Product";
 
 export interface CompareHistory {
-    _id:       string;
-    userId:    string;
+    _id: string;
+    userId: string;
+    compareResponse: CompareResponse;
     createdAt: string;
-    products:  any[];
-    analysis:  {
-        score1:  number;
-        score2:  number;
-        pros1:   string[];
-        pros2:   string[];
-        cons1:   string[];
-        cons2:   string[];
-        winner:  1 | 2;
-        verdict: string;
-    };
 }
 
 export class HistoryService {
 
+    // Lista completa storico
     public async getHistory(): Promise<CompareHistory[]> {
         const res = await inviaRichiesta("GET", "/history", {});
         if (res?.status === 200) return res.data;
         throw new Error(res?.data?.err || "Errore nel recupero dello storico");
     }
 
+    // Singolo confronto per ID — usato da compare.tsx in modalità storico
+    public async getHistoryById(id: string): Promise<CompareHistory> {
+        const res = await inviaRichiesta("GET", `/history/${id}`, {});
+        if (res?.status === 200) return res.data;
+        throw new Error(res?.data?.err || "Confronto non trovato");
+    }
+
+    // Elimina un confronto
     public async deleteHistory(id: string): Promise<void> {
         const res = await inviaRichiesta("DELETE", `/history/${id}`, {});
         if (res?.status === 200) return;

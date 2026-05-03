@@ -416,20 +416,20 @@ app.post("/api/compare", async function (req, res, next) {
     aiService.compareProducts(p1, p2).then(async (compareResponse) => {
         res.send(compareResponse);
 
+        // Salva storico in background (non blocca la risposta)
         const userId = (req as any).user.userId;
-        const histClient = new MongoClient(connectionString);
+        const hClient = new MongoClient(connectionString);
         try {
-            await histClient.connect();
-            await histClient.db(dbName).collection("comparisons").insertOne({
+            await hClient.connect();
+            await hClient.db(dbName).collection("comparisons").insertOne({
                 userId,
-                products: [p1, p2],
-                analysis: compareResponse,
+                compareResponse, 
                 createdAt: new Date(),
             });
-        } catch (err: any) {
-            console.error("Errore salvataggio storico:", err.message);
+        } catch (e: any) {
+            console.error("Errore salvataggio storico:", e.message);
         } finally {
-            await histClient.close();
+            await hClient.close();
         }
     }).catch((err: any) => {
         console.error(err);
@@ -437,46 +437,59 @@ app.post("/api/compare", async function (req, res, next) {
     });
 });
 
-// GET /api/history  — restituisce storico confronti dell'utente
+// GET /api/history
 app.get("/api/history", async function (req, res, next) {
     const userId = (req as any).user.userId;
- 
+
     const client = new MongoClient(connectionString);
     await client.connect().catch(function () {
         res.status(503).send({ err: "Errore di connessione al dbms" });
         return;
     });
- 
+
     const collection = client.db(dbName).collection("comparisons");
-    const cmd = collection
-        .find({ userId })
-        .sort({ createdAt: -1 })   // più recenti prima
-        .toArray();
- 
+    const cmd = collection.find({ userId }).sort({ createdAt: -1 }).toArray();
     cmd.then(function (data) { res.status(200).send(data); });
     cmd.catch(function (err: any) { res.status(500).send({ err: "Errore query: " + err }); });
     cmd.finally(function () { client.close(); });
 });
- 
-// DELETE /api/history/:id  — elimina un confronto dallo storico
-app.delete("/api/history/:id", async function (req, res, next) {
+
+// GET /api/history/:id — singolo confronto (per aprirlo da storico dei confronti)
+app.get("/api/history/:id", async function (req, res, next) {
     const userId = (req as any).user.userId;
-    const _id    = new ObjectId(req.params.id);
- 
+    const _id = new ObjectId(req.params.id);
+
     const client = new MongoClient(connectionString);
     await client.connect().catch(function () {
         res.status(503).send({ err: "Errore di connessione al dbms" });
         return;
     });
- 
+
+    const collection = client.db(dbName).collection("comparisons");
+    const cmd = collection.findOne({ _id, userId });
+    cmd.then(function (data) {
+        if (!data) { res.status(404).send({ err: "Confronto non trovato" }); return; }
+        res.status(200).send(data);
+    });
+    cmd.catch(function (err: any) { res.status(500).send({ err: "Errore query: " + err }); });
+    cmd.finally(function () { client.close(); });
+});
+
+// DELETE /api/history/:id
+app.delete("/api/history/:id", async function (req, res, next) {
+    const userId = (req as any).user.userId;
+    const _id = new ObjectId(req.params.id);
+
+    const client = new MongoClient(connectionString);
+    await client.connect().catch(function () {
+        res.status(503).send({ err: "Errore di connessione al dbms" });
+        return;
+    });
+
     const collection = client.db(dbName).collection("comparisons");
     const cmd = collection.deleteOne({ _id, userId });
- 
     cmd.then(function (data) {
-        if (data.deletedCount === 0) {
-            res.status(404).send({ err: "Confronto non trovato" });
-            return;
-        }
+        if (data.deletedCount === 0) { res.status(404).send({ err: "Confronto non trovato" }); return; }
         res.status(200).send({ deleted: true });
     });
     cmd.catch(function (err: any) { res.status(500).send({ err: "Errore eliminazione: " + err }); });
