@@ -1,342 +1,276 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
-    View,
-    Text,
-    Image,
-    ScrollView,
-    StyleSheet,
-    ActivityIndicator,
-    TouchableOpacity,
-    FlatList,
-    Dimensions,
+    View, Text, ScrollView, StyleSheet,
+    ActivityIndicator, TouchableOpacity, FlatList,
+    Dimensions, Animated, StatusBar
 } from "react-native";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { ProductService } from "../../api/product-service";
-import { useLocalSearchParams, router } from "expo-router";
-import { inviaRichiesta } from "../../api/libreria";
+import { FavoritesService } from "../../api/favorites-service";
 import { Product } from "../../types/Product";
 
 const { width } = Dimensions.get("window");
 
+const C = {
+    bg: "#08080F",
+    card: "#111118",
+    border: "#1C1C2E",
+    lime: "#C8F135",
+    limeDim: "#8AAF22",
+    red: "#FF3B5C",
+    textPrimary: "#EEEEF8",
+    textSub: "#7070A0",
+    textDim: "#3A3A5C",
+    imageBg: "#0E0E1A",
+};
+
 export default function ProductDetail() {
-    const productService = new ProductService();
+    const router = useRouter();
     const { id } = useLocalSearchParams<{ id: string }>();
+    const productService = new ProductService();
+    const favoritesService = new FavoritesService();
 
     const [product, setProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [currentImage, setCurrentImage] = useState(0);
+    const [isFavorite, setIsFavorite] = useState(false);
+    const fadeIn = useRef(new Animated.Value(0)).current;
 
     useEffect(function () {
         if (!id) return;
-        const response = productService.getProductById(id);
-        response.then(function (data) {
-            setProduct(data);
-        }).catch(function (err) {
-            setError(err.message);
-        }).finally(function () {
-            setLoading(false);
-        });
+        productService.getProductById(id)
+            .then(function (data) {
+                setProduct(data);
+                return favoritesService.isFavorite(id);
+            })
+            .then(function (fav) {
+                setIsFavorite(fav);
+                Animated.timing(fadeIn, { toValue: 1, duration: 600, useNativeDriver: true }).start();
+            })
+            .catch(function (err) { setError(err.message); })
+            .finally(function () { setLoading(false); });
     }, [id]);
 
-    // --- Loading ---
-    if (loading) {
-        return (
-            <View style={styles.centered}>
-                <ActivityIndicator size="large" color="#6C63FF" />
-                <Text style={styles.loadingText}>Caricamento prodotto...</Text>
-            </View>
-        );
+    async function handleToggleFavorite() {
+        if (!product) return;
+        try {
+            await favoritesService.updateFavorites(product._id);
+            setIsFavorite(function (prev) { return !prev; });
+        } catch (err: any) {
+            console.error(err.message);
+        }
     }
 
-    // --- Error ---
-    if (error || !product) {
-        return (
-            <View style={styles.centered}>
-                <Text style={styles.errorText}>{error ?? "Prodotto non trovato"}</Text>
-                <TouchableOpacity style={styles.backBtn} onPress={function () { router.back(); }}>
-                    <Text style={styles.backBtnText}>← Torna indietro</Text>
-                </TouchableOpacity>
-            </View>
-        );
-    }
+    if (loading) return (
+        <View style={styles.centered}>
+            <StatusBar barStyle="light-content" />
+            <ActivityIndicator size="large" color={C.lime} />
+        </View>
+    );
+
+    if (error || !product) return (
+        <View style={styles.centered}>
+            <StatusBar barStyle="light-content" />
+            <Text style={styles.errorText}>{error ?? "Prodotto non trovato"}</Text>
+            <TouchableOpacity style={styles.backBtnError} onPress={() => router.back()}>
+                <Text style={styles.backBtnErrorText}>← Torna indietro</Text>
+            </TouchableOpacity>
+        </View>
+    );
 
     const specs = product.specs as Record<string, any>;
 
-    // --- Main ---
     return (
-        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <View style={styles.root}>
+            <StatusBar barStyle="light-content" />
 
-            {/* Carosello immagini */}
-            {product.images.length > 0 && (
-                <View>
-                    <FlatList
-                        data={product.images}
-                        horizontal
-                        pagingEnabled
-                        showsHorizontalScrollIndicator={false}
-                        onMomentumScrollEnd={function (e) {
-                            const index = Math.round(e.nativeEvent.contentOffset.x / width);
-                            setCurrentImage(index);
-                        }}
-                        renderItem={function ({ item }) {
-                            return (
-                                <Image
-                                    source={{ uri: item }}
-                                    style={styles.image}
-                                    resizeMode="contain"
-                                />
-                            );
-                        }}
-                        keyExtractor={function (_, i) { return String(i); }}
-                    />
-                    {product.images.length > 1 && (
-                        <View style={styles.dots}>
-                            {product.images.map(function (_, i) {
+            <View style={styles.topBar}>
+                <TouchableOpacity style={styles.topBtn} onPress={() => router.back()}>
+                    <Text style={styles.topBtnText}>←</Text>
+                </TouchableOpacity>
+                <Text style={styles.topBarTitle} numberOfLines={1}>{product.name}</Text>
+                <TouchableOpacity style={styles.topBtn} onPress={handleToggleFavorite}>
+                    <Text style={[styles.heartIcon, isFavorite && styles.heartActive]}>
+                        {isFavorite ? "♥" : "♡"}
+                    </Text>
+                </TouchableOpacity>
+            </View>
+
+            <Animated.ScrollView
+                style={{ opacity: fadeIn }}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scroll}
+            >
+                {product.images && product.images.length > 0 && (
+                    <View style={styles.imageContainer}>
+                        <FlatList
+                            data={product.images}
+                            horizontal
+                            pagingEnabled
+                            showsHorizontalScrollIndicator={false}
+                            onMomentumScrollEnd={function (e) {
+                                const index = Math.round(e.nativeEvent.contentOffset.x / (width - 40));
+                                setCurrentImage(index);
+                            }}
+                            renderItem={function ({ item }) {
                                 return (
-                                    <View
-                                        key={i}
-                                        style={[styles.dot, i === currentImage && styles.dotActive]}
-                                    />
+                                    <View style={styles.imageWrapper}>
+                                        <Text style={styles.imagePlaceholder}>📷</Text>
+                                        {/* Sostituisci con <Image source={{ uri: item }} style={styles.image} resizeMode="contain" /> */}
+                                    </View>
                                 );
-                            })}
-                        </View>
-                    )}
-                </View>
-            )}
-
-            {/* Info principali */}
-            <View style={styles.section}>
-                <View style={styles.row}>
-                    <Text style={styles.category}>{product.category.toUpperCase()}</Text>
-                    <View style={styles.scoreBadge}>
-                        <Text style={styles.scoreText}>⭐ {product.commonScore.toFixed(1)}</Text>
+                            }}
+                            keyExtractor={function (_, i) { return String(i); }}
+                        />
+                        {product.images.length > 1 && (
+                            <View style={styles.dots}>
+                                {product.images.map(function (_, i) {
+                                    return (
+                                        <View key={i} style={[styles.dot, i === currentImage && styles.dotActive]} />
+                                    );
+                                })}
+                            </View>
+                        )}
                     </View>
-                </View>
-                <Text style={styles.brand}>{product.brand}</Text>
-                <Text style={styles.name}>{product.name}</Text>
-                <Text style={styles.price}>€ {product.price.toFixed(2)}</Text>
-            </View>
+                )}
 
-            {/* Specifiche tecniche */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Specifiche tecniche</Text>
-                {Object.entries(specs).map(function ([key, value]) {
-                    return (
-                        <View key={key} style={styles.specRow}>
-                            <Text style={styles.specKey}>{key}</Text>
-                            <Text style={styles.specValue}>
-                                {Array.isArray(value)
-                                    ? value.join(", ")
-                                    : typeof value === "boolean"
-                                        ? value ? "Sì" : "No"
-                                        : String(value)}
-                            </Text>
+                <View style={styles.infoCard}>
+                    <View style={styles.infoRow}>
+                        <View style={styles.categoryTag}>
+                            <Text style={styles.categoryTagText}>{product.category.toUpperCase()}</Text>
                         </View>
-                    );
-                })}
-            </View>
+                    </View>
+                    <Text style={styles.brand}>{product.brand.toUpperCase()}</Text>
+                    <Text style={styles.name}>{product.name}</Text>
+                    <Text style={styles.price}>€ {product.price.toFixed(2)}</Text>
+                </View>
 
-            {/* Storico prezzi */}
-            {product.priceHistory.length > 0 && (
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Storico prezzi</Text>
-                    {product.priceHistory.slice().reverse().map(function (entry, i) {
+                <SectionLabel text="SPECIFICHE" />
+                <View style={styles.specsCard}>
+                    {Object.entries(specs).map(function ([key, value], i) {
+                        const display = Array.isArray(value)
+                            ? value.join(", ")
+                            : typeof value === "boolean"
+                                ? value ? "Sì" : "No"
+                                : String(value);
                         return (
-                            <View key={i} style={styles.priceRow}>
-                                <Text style={styles.priceDate}>{entry.date}</Text>
-                                <Text style={styles.priceValue}>€ {entry.price.toFixed(2)}</Text>
+                            <View key={key} style={[styles.specRow, i > 0 && styles.specRowBorder]}>
+                                <Text style={styles.specKey}>{key}</Text>
+                                <Text style={styles.specValue}>{display}</Text>
                             </View>
                         );
                     })}
                 </View>
-            )}
 
-            {/* Bottone confronto */}
-            <TouchableOpacity
-                style={styles.compareBtn}
-                onPress={function () {
-                    // TODO: navigare alla schermata di confronto passando questo prodotto
-                    // router.push({ pathname: "/compare", params: { id: product._id } });
-                }}
-            >
-                <Text style={styles.compareBtnText}>Confronta questo prodotto</Text>
-            </TouchableOpacity>
+                {product.priceHistory && product.priceHistory.length > 0 && (
+                    <>
+                        <SectionLabel text="STORICO PREZZI" />
+                        <View style={styles.specsCard}>
+                            {product.priceHistory.slice().reverse().map(function (entry, i) {
+                                return (
+                                    <View key={i} style={[styles.specRow, i > 0 && styles.specRowBorder]}>
+                                        <Text style={styles.specKey}>{entry.date}</Text>
+                                        <Text style={[styles.specValue, { color: C.lime }]}>
+                                            € {entry.price.toFixed(2)}
+                                        </Text>
+                                    </View>
+                                );
+                            })}
+                        </View>
+                    </>
+                )}
 
-            <View style={{ height: 40 }} />
-        </ScrollView>
+                <TouchableOpacity
+                    style={styles.compareBtn}
+                    onPress={function () {
+                        router.push({
+                            pathname: "/search",
+                            params: { category: product.category }
+                        });
+                    }}
+                    activeOpacity={0.85}
+                >
+                    <Text style={styles.compareBtnText}>Confronta questo prodotto →</Text>
+                </TouchableOpacity>
+
+                <View style={{ height: 48 }} />
+            </Animated.ScrollView>
+        </View>
     );
 }
 
-// ─────────────────────────────────────────
-// STILI
-// ─────────────────────────────────────────
+function SectionLabel({ text }: { text: string }) {
+    return (
+        <View style={styles.sectionLabelRow}>
+            <View style={styles.sectionLine} />
+            <Text style={styles.sectionLabel}>{text}</Text>
+            <View style={styles.sectionLine} />
+        </View>
+    );
+}
+
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: "#f8f8f8",
+    root: { flex: 1, backgroundColor: C.bg },
+    scroll: { paddingHorizontal: 20, paddingBottom: 24 },
+    centered: { flex: 1, backgroundColor: C.bg, justifyContent: "center", alignItems: "center", gap: 16 },
+
+    // Top bar
+    topBar: {
+        flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+        paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16,
+        backgroundColor: C.bg,
     },
-    centered: {
-        flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
-        padding: 24,
-    },
-    loadingText: {
-        marginTop: 12,
-        color: "#666",
-        fontSize: 15,
-    },
-    errorText: {
-        color: "#e74c3c",
-        fontSize: 16,
-        textAlign: "center",
-        marginBottom: 16,
-    },
-    backBtn: {
-        paddingHorizontal: 20,
-        paddingVertical: 10,
-        backgroundColor: "#6C63FF",
-        borderRadius: 8,
-    },
-    backBtnText: {
-        color: "#fff",
-        fontWeight: "600",
-    },
+    topBtn: { backgroundColor: C.card, borderRadius: 12, borderWidth: 1, borderColor: C.border, width: 44, height: 44, justifyContent: "center", alignItems: "center" },
+    topBtnText: { color: C.textSub, fontSize: 20 },
+    topBarTitle: { flex: 1, color: C.textPrimary, fontSize: 14, fontWeight: "700", textAlign: "center", marginHorizontal: 12 },
+    heartIcon: { fontSize: 20, color: C.textDim },
+    heartActive: { color: C.red },
 
     // Immagini
-    image: {
-        width,
-        height: 280,
-        backgroundColor: "#fff",
+    imageContainer: { marginBottom: 20 },
+    imageWrapper: {
+        width: width - 40, height: 240,
+        backgroundColor: C.imageBg, borderRadius: 20,
+        borderWidth: 1, borderColor: C.border,
+        justifyContent: "center", alignItems: "center",
     },
-    dots: {
-        flexDirection: "row",
-        justifyContent: "center",
-        marginTop: 8,
-        gap: 6,
-    },
-    dot: {
-        width: 7,
-        height: 7,
-        borderRadius: 4,
-        backgroundColor: "#ccc",
-    },
-    dotActive: {
-        backgroundColor: "#6C63FF",
-    },
+    imagePlaceholder: { fontSize: 64, opacity: 0.3 },
+    dots: { flexDirection: "row", justifyContent: "center", marginTop: 10, gap: 6 },
+    dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.border },
+    dotActive: { backgroundColor: C.lime },
 
-    // Sezioni card
-    section: {
-        backgroundColor: "#fff",
-        borderRadius: 12,
-        marginHorizontal: 16,
-        marginTop: 16,
-        padding: 16,
-        shadowColor: "#000",
-        shadowOpacity: 0.05,
-        shadowRadius: 6,
-        elevation: 2,
+    // Info card
+    infoCard: {
+        backgroundColor: C.card, borderRadius: 20,
+        borderWidth: 1, borderColor: C.border,
+        padding: 20, marginBottom: 8, gap: 6,
     },
-    sectionTitle: {
-        fontSize: 16,
-        fontWeight: "700",
-        color: "#333",
-        marginBottom: 12,
-    },
+    infoRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 },
+    categoryTag: { backgroundColor: C.border, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
+    categoryTagText: { color: C.textSub, fontSize: 10, fontWeight: "700", letterSpacing: 2 },
+    brand: { color: C.textSub, fontSize: 11, letterSpacing: 2 },
+    name: { color: C.textPrimary, fontSize: 22, fontWeight: "800", lineHeight: 28 },
+    price: { color: C.lime, fontSize: 28, fontWeight: "900", marginTop: 4 },
 
-    // Header prodotto
-    row: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: 4,
-    },
-    category: {
-        fontSize: 11,
-        fontWeight: "700",
-        color: "#6C63FF",
-        letterSpacing: 1,
-    },
-    scoreBadge: {
-        backgroundColor: "#FFF8E1",
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 20,
-    },
-    scoreText: {
-        fontSize: 13,
-        fontWeight: "600",
-        color: "#F59E0B",
-    },
-    brand: {
-        fontSize: 13,
-        color: "#888",
-        marginBottom: 2,
-    },
-    name: {
-        fontSize: 22,
-        fontWeight: "800",
-        color: "#1a1a1a",
-        marginBottom: 8,
-    },
-    price: {
-        fontSize: 26,
-        fontWeight: "700",
-        color: "#6C63FF",
-    },
+    // Section label
+    sectionLabelRow: { flexDirection: "row", alignItems: "center", marginVertical: 16 },
+    sectionLine: { flex: 1, height: 1, backgroundColor: C.border },
+    sectionLabel: { color: C.textSub, fontSize: 11, fontWeight: "700", letterSpacing: 2, marginHorizontal: 12 },
 
-    // Specifiche
-    specRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        paddingVertical: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: "#f0f0f0",
-    },
-    specKey: {
-        fontSize: 14,
-        color: "#555",
-        flex: 1,
-        fontWeight: "500",
-    },
-    specValue: {
-        fontSize: 14,
-        color: "#1a1a1a",
-        flex: 1,
-        textAlign: "right",
-        fontWeight: "600",
-    },
-
-    // Storico prezzi
-    priceRow: {
-        flexDirection: "row",
-        justifyContent: "space-between",
-        paddingVertical: 6,
-        borderBottomWidth: 1,
-        borderBottomColor: "#f0f0f0",
-    },
-    priceDate: {
-        fontSize: 13,
-        color: "#888",
-    },
-    priceValue: {
-        fontSize: 13,
-        fontWeight: "600",
-        color: "#333",
-    },
+    // Specs
+    specsCard: { backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.border, overflow: "hidden" },
+    specRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 13, paddingHorizontal: 16 },
+    specRowBorder: { borderTopWidth: 1, borderTopColor: C.border },
+    specKey: { fontSize: 13, color: C.textSub, flex: 1 },
+    specValue: { fontSize: 13, color: C.textPrimary, fontWeight: "600", flex: 1, textAlign: "right" },
 
     // Bottone confronta
-    compareBtn: {
-        margin: 16,
-        marginTop: 20,
-        backgroundColor: "#6C63FF",
-        borderRadius: 12,
-        paddingVertical: 16,
-        alignItems: "center",
-    },
-    compareBtnText: {
-        color: "#fff",
-        fontSize: 16,
-        fontWeight: "700",
-    },
+    compareBtn: { backgroundColor: C.lime, borderRadius: 16, paddingVertical: 16, alignItems: "center", marginTop: 24 },
+    compareBtnText: { color: "#000", fontSize: 16, fontWeight: "800" },
+
+    // Error
+    errorText: { color: C.red, fontSize: 16, textAlign: "center", paddingHorizontal: 32 },
+    backBtnError: { borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 20, paddingVertical: 10 },
+    backBtnErrorText: { color: C.textSub, fontSize: 14 },
 });

@@ -101,7 +101,6 @@ export interface Product {
     category: TechCategory;
     price: number;
     images: string[];
-    commonScore: number;
     priceHistory: PriceHistory[];
     specs: ProductSpecs;
 }

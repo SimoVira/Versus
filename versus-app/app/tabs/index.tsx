@@ -9,24 +9,24 @@ import { TechCategory } from "../../types/Product";
 import { AuthService } from "../../api/auth-service";
 
 const C = {
-    bg:          "#08080F",
-    card:        "#111118",
-    border:      "#1C1C2E",
-    lime:        "#C8F135",
-    limeDim:     "#8AAF22",
+    bg: "#08080F",
+    card: "#111118",
+    border: "#1C1C2E",
+    lime: "#C8F135",
+    limeDim: "#8AAF22",
     textPrimary: "#EEEEF8",
-    textSub:     "#7070A0",
-    textDim:     "#3A3A5C",
+    textSub: "#7070A0",
+    textDim: "#3A3A5C",
 };
 
 const CATEGORY_ICONS: Record<string, string> = {
     smartphone: "📱",
-    laptop:     "💻",
-    tablet:     "",
-    monitor:    "🖥️",
-    cpu:        "🔲",
-    gpu:        "🎮",
-    cuffie:     "🎧",
+    laptop: "💻",
+    tablet: "",
+    monitor: "🖥️",
+    cpu: "🔲",
+    gpu: "🎮",
+    cuffie: "🎧",
     smartwatch: "⌚",
 };
 
@@ -35,9 +35,9 @@ export default function Home() {
     const categoryService = new CategoryService();
 
     const [categories, setCategories] = useState<TechCategory[]>([]);
-    const [loading, setLoading]       = useState<boolean>(true);
-    const [error, setError]           = useState<string>("");
-    const [userName, setUserName]     = useState<string>("");
+    const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string>("");
+    const [userName, setUserName] = useState<string>("");
 
     useEffect(function () {
         AuthService.isLoggedIn().then(function (logged) {
@@ -199,7 +199,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         marginBottom: 20,
     },
-    sectionLine:  { flex: 1, height: 1, backgroundColor: C.border },
+    sectionLine: { flex: 1, height: 1, backgroundColor: C.border },
     sectionLabel: {
         color: C.textSub,
         fontSize: 11,
@@ -243,6 +243,6 @@ const styles = StyleSheet.create({
     },
 
     errorText: { fontSize: 16, color: "#FF3B5C", marginBottom: 16 },
-    retryBtn:  { backgroundColor: C.lime, padding: 12, borderRadius: 8 },
+    retryBtn: { backgroundColor: C.lime, padding: 12, borderRadius: 8 },
     retryText: { color: "#000", fontWeight: "bold" },
 });

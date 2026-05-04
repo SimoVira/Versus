@@ -56,9 +56,7 @@ export default function Search() {
         try {
             const data = await favoritesService.getFavorites();
             setFavorites(new Set(data.map(function (p: Product) { return p._id; })));
-        } catch {
-            // silenzioso
-        }
+        } catch { /* silenzioso */ }
     }
 
     async function handleToggleFavorite(productId: string) {
@@ -162,24 +160,37 @@ export default function Search() {
                                 </View>
 
                                 <View style={styles.rightColumn}>
+
+                                    {/* ⓘ — dettaglio prodotto */}
+                                    <TouchableOpacity
+                                        style={styles.infoBtn}
+                                        onPress={function () {
+                                            router.push({
+                                                pathname: "/products/[id]",
+                                                params: { id: item._id }
+                                            });
+                                        }}
+                                        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+                                    >
+                                        <Text style={styles.infoBtnText}>ⓘ</Text>
+                                    </TouchableOpacity>
+
+                                    {/* ♥ — preferiti */}
                                     <TouchableOpacity
                                         onPress={function () { handleToggleFavorite(item._id); }}
-                                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                                     >
                                         <Text style={[styles.heartIcon, isFav && styles.heartActive]}>
                                             {isFav ? "♥" : "♡"}
                                         </Text>
                                     </TouchableOpacity>
 
+                                    {/* Badge selezione */}
                                     {isSelected && (
                                         <View style={styles.selectionBadge}>
                                             <Text style={styles.selectionBadgeText}>{selIndex + 1}</Text>
                                         </View>
                                     )}
-
-                                    <View style={[styles.scoreBadge, isSelected && styles.scoreBadgeSelected]}>
-                                        <Text style={styles.scoreText}>{item.commonScore}</Text>
-                                    </View>
                                 </View>
                             </View>
                         </TouchableOpacity>
@@ -219,13 +230,16 @@ export default function Search() {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: C.bg, paddingHorizontal: 20, paddingTop: 60 },
     centered: { flex: 1, backgroundColor: C.bg, justifyContent: "center", alignItems: "center" },
+
     header: { flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 20 },
     backBtn: { backgroundColor: C.card, borderRadius: 12, borderWidth: 1, borderColor: C.border, width: 44, height: 44, justifyContent: "center", alignItems: "center" },
     backArrow: { color: C.textSub, fontSize: 20 },
     headerText: { flex: 1 },
     title: { fontSize: 26, fontWeight: "900", color: C.textPrimary, textTransform: "capitalize" },
     hint: { fontSize: 12, color: C.textSub, marginTop: 2 },
+
     searchInput: { backgroundColor: C.inputBg, borderRadius: 14, borderWidth: 1, borderColor: C.border, paddingHorizontal: 16, paddingVertical: 13, fontSize: 15, color: C.textPrimary, marginBottom: 16 },
+
     card: { backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.border, padding: 16, marginBottom: 10 },
     cardSelected: { borderColor: C.limeDim, backgroundColor: "#0F1A0A" },
     cardRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
@@ -233,18 +247,22 @@ const styles = StyleSheet.create({
     brand: { fontSize: 10, color: C.textSub, letterSpacing: 1.5, marginBottom: 4 },
     name: { fontSize: 16, fontWeight: "700", color: C.textPrimary, marginBottom: 6 },
     price: { fontSize: 18, fontWeight: "800", color: C.lime },
+
     rightColumn: { alignItems: "center", gap: 8 },
-    heartIcon: { fontSize: 20, color: C.textDim },
+
+    infoBtn: { backgroundColor: C.border, borderRadius: 20, width: 26, height: 26, justifyContent: "center", alignItems: "center" },
+    infoBtnText: { color: C.textSub, fontSize: 14, fontWeight: "700" },
+
+    heartIcon: { fontSize: 18, color: C.textDim },
     heartActive: { color: C.red },
     selectionBadge: { backgroundColor: C.lime, borderRadius: 50, width: 22, height: 22, justifyContent: "center", alignItems: "center" },
     selectionBadgeText: { color: "#000", fontWeight: "800", fontSize: 11 },
-    scoreBadge: { backgroundColor: C.border, borderRadius: 50, width: 50, height: 50, justifyContent: "center", alignItems: "center" },
-    scoreBadgeSelected: { backgroundColor: C.limeDim },
-    scoreText: { color: C.textPrimary, fontWeight: "800", fontSize: 15 },
+
     emptyText: { textAlign: "center", color: C.textSub, marginTop: 48, fontSize: 15 },
     errorText: { fontSize: 16, color: C.red, marginBottom: 16, textAlign: "center" },
     retryBtn: { backgroundColor: C.lime, padding: 12, borderRadius: 10 },
     retryText: { color: "#000", fontWeight: "bold" },
+
     compareBar: { position: "absolute", bottom: 0, left: 0, right: 0, backgroundColor: C.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, borderTopWidth: 1, borderColor: C.border, paddingHorizontal: 20, paddingVertical: 16, gap: 12, elevation: 16 },
     compareSlots: { flexDirection: "row", alignItems: "center", gap: 8 },
     slot: { flex: 1, backgroundColor: C.bg, borderRadius: 12, padding: 10, alignItems: "center", minHeight: 48, justifyContent: "center", borderWidth: 1, borderColor: C.border },

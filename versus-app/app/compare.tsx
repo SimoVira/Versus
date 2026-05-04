@@ -9,17 +9,17 @@ import { HistoryService } from "../api/history-service";
 import { Product } from "../types/Product";
 
 const C = {
-    bg:          "#08080F",
-    card:        "#111118",
-    border:      "#1C1C2E",
-    lime:        "#C8F135",
-    limeDim:     "#8AAF22",
-    red:         "#FF3B5C",
+    bg: "#08080F",
+    card: "#111118",
+    border: "#1C1C2E",
+    lime: "#C8F135",
+    limeDim: "#8AAF22",
+    red: "#FF3B5C",
     textPrimary: "#EEEEF8",
-    textSub:     "#7070A0",
-    textDim:     "#3A3A5C",
-    aiCard:      "#0C1410",
-    aiBorder:    "#2A4020",
+    textSub: "#7070A0",
+    textDim: "#3A3A5C",
+    aiCard: "#0C1410",
+    aiBorder: "#2A4020",
 };
 
 interface GeminiAnalysis {
@@ -39,17 +39,17 @@ export default function Compare() {
     const compareService = new CompareService();
     const historyService = new HistoryService();
 
-    const [product1, setProduct1]         = useState<Product | null>(null);
-    const [product2, setProduct2]         = useState<Product | null>(null);
-    const [analysis, setAnalysis]         = useState<GeminiAnalysis | null>(null);
-    const [loading, setLoading]           = useState(true);
-    const [loadingMsg, setLoadingMsg]     = useState("Caricamento...");
+    const [product1, setProduct1] = useState<Product | null>(null);
+    const [product2, setProduct2] = useState<Product | null>(null);
+    const [analysis, setAnalysis] = useState<GeminiAnalysis | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [loadingMsg, setLoadingMsg] = useState("Caricamento...");
     const [isFromHistory, setIsFromHistory] = useState(false);
-    const [error, setError]               = useState("");
+    const [error, setError] = useState("");
 
     const score1Anim = useRef(new Animated.Value(0)).current;
     const score2Anim = useRef(new Animated.Value(0)).current;
-    const fadeIn     = useRef(new Animated.Value(0)).current;
+    const fadeIn = useRef(new Animated.Value(0)).current;
 
     useEffect(function () {
         if (historyId) {
@@ -100,7 +100,7 @@ export default function Compare() {
         Animated.parallel([
             Animated.timing(score1Anim, { toValue: s1, duration: 1200, useNativeDriver: false }),
             Animated.timing(score2Anim, { toValue: s2, duration: 1200, useNativeDriver: false }),
-            Animated.timing(fadeIn,     { toValue: 1,  duration: 900,  useNativeDriver: true }),
+            Animated.timing(fadeIn, { toValue: 1, duration: 900, useNativeDriver: true }),
         ]).start();
     }
 
@@ -213,7 +213,7 @@ function ProductHeader({ product, isWinner, scoreAnim, align }: {
                 </View>
             )}
             <Text style={[styles.productBrand, align === "right" && styles.textRight]}>{product.brand.toUpperCase()}</Text>
-            <Text style={[styles.productName,  align === "right" && styles.textRight]} numberOfLines={2}>{product.name}</Text>
+            <Text style={[styles.productName, align === "right" && styles.textRight]} numberOfLines={2}>{product.name}</Text>
             <View style={[styles.scoreRow, align === "right" && styles.scoreRowRight]}>
                 <Animated.Text style={[styles.scoreBig, { color: isWinner ? C.lime : C.textPrimary }]}>{displayScore}</Animated.Text>
                 <Text style={[styles.scoreSlash, { color: isWinner ? C.limeDim : C.textDim }]}>/100</Text>
@@ -253,71 +253,71 @@ function SectionLabel({ text }: { text: string }) {
 }
 
 const styles = StyleSheet.create({
-    root:   { flex: 1, backgroundColor: C.bg },
+    root: { flex: 1, backgroundColor: C.bg },
     scroll: { padding: 20, paddingTop: 56 },
 
     loadingContainer: { flex: 1, backgroundColor: C.bg, justifyContent: "center", alignItems: "center", gap: 16 },
-    loadingMsg:  { color: C.textPrimary, fontSize: 17, fontWeight: "600" },
+    loadingMsg: { color: C.textPrimary, fontSize: 17, fontWeight: "600" },
     loadingHint: { color: C.textSub, fontSize: 13 },
-    errorText:   { color: C.red, fontSize: 16, textAlign: "center", paddingHorizontal: 32 },
-    backBtn:     { marginTop: 16, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 20, paddingVertical: 10 },
+    errorText: { color: C.red, fontSize: 16, textAlign: "center", paddingHorizontal: 32 },
+    backBtn: { marginTop: 16, borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 20, paddingVertical: 10 },
     backBtnText: { color: C.textSub, fontSize: 14 },
 
-    topRow:           { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 28 },
-    backRow:          { flexDirection: "row", alignItems: "center", gap: 8 },
-    backArrow:        { color: C.textSub, fontSize: 20 },
-    backLabel:        { color: C.textSub, fontSize: 14, letterSpacing: 1.5, textTransform: "uppercase" },
-    historyBadge:     { backgroundColor: C.border, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
+    topRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 28 },
+    backRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+    backArrow: { color: C.textSub, fontSize: 20 },
+    backLabel: { color: C.textSub, fontSize: 14, letterSpacing: 1.5, textTransform: "uppercase" },
+    historyBadge: { backgroundColor: C.border, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
     historyBadgeText: { color: C.textSub, fontSize: 10, fontWeight: "700", letterSpacing: 1.5 },
 
-    header:             { flexDirection: "row", alignItems: "flex-start", marginBottom: 36 },
-    productHeaderCol:   { flex: 1 },
+    header: { flexDirection: "row", alignItems: "flex-start", marginBottom: 36 },
+    productHeaderCol: { flex: 1 },
     productHeaderRight: { alignItems: "flex-end" },
-    textRight:          { textAlign: "right" },
-    winnerTag:          { backgroundColor: C.lime, borderRadius: 4, paddingHorizontal: 7, paddingVertical: 3, alignSelf: "flex-start", marginBottom: 8 },
-    winnerTagRight:     { alignSelf: "flex-end" },
-    winnerTagText:      { color: "#000", fontSize: 10, fontWeight: "800", letterSpacing: 1.5 },
-    productBrand:       { color: C.textSub, fontSize: 11, letterSpacing: 2, marginBottom: 4 },
-    productName:        { color: C.textPrimary, fontSize: 16, fontWeight: "700", marginBottom: 10, lineHeight: 22 },
-    scoreRow:           { flexDirection: "row", alignItems: "flex-end", gap: 2 },
-    scoreRowRight:      { justifyContent: "flex-end" },
-    scoreBig:           { fontSize: 52, fontWeight: "900", lineHeight: 56 },
-    scoreSlash:         { fontSize: 16, fontWeight: "600", marginBottom: 6 },
-    vsColumn:           { width: 36, alignItems: "center", paddingTop: 36 },
-    vsText:             { color: C.textDim, fontSize: 12, fontWeight: "800", letterSpacing: 2 },
+    textRight: { textAlign: "right" },
+    winnerTag: { backgroundColor: C.lime, borderRadius: 4, paddingHorizontal: 7, paddingVertical: 3, alignSelf: "flex-start", marginBottom: 8 },
+    winnerTagRight: { alignSelf: "flex-end" },
+    winnerTagText: { color: "#000", fontSize: 10, fontWeight: "800", letterSpacing: 1.5 },
+    productBrand: { color: C.textSub, fontSize: 11, letterSpacing: 2, marginBottom: 4 },
+    productName: { color: C.textPrimary, fontSize: 16, fontWeight: "700", marginBottom: 10, lineHeight: 22 },
+    scoreRow: { flexDirection: "row", alignItems: "flex-end", gap: 2 },
+    scoreRowRight: { justifyContent: "flex-end" },
+    scoreBig: { fontSize: 52, fontWeight: "900", lineHeight: 56 },
+    scoreSlash: { fontSize: 16, fontWeight: "600", marginBottom: 6 },
+    vsColumn: { width: 36, alignItems: "center", paddingTop: 36 },
+    vsText: { color: C.textDim, fontSize: 12, fontWeight: "800", letterSpacing: 2 },
 
     sectionLabelRow: { flexDirection: "row", alignItems: "center", marginBottom: 14, marginTop: 4 },
-    sectionLine:     { flex: 1, height: 1, backgroundColor: C.border },
-    sectionLabel:    { color: C.textSub, fontSize: 11, fontWeight: "700", letterSpacing: 2, marginHorizontal: 12 },
+    sectionLine: { flex: 1, height: 1, backgroundColor: C.border },
+    sectionLabel: { color: C.textSub, fontSize: 11, fontWeight: "700", letterSpacing: 2, marginHorizontal: 12 },
 
-    specsCard:      { backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.border, marginBottom: 28, overflow: "hidden" },
-    specRow:        { flexDirection: "row", alignItems: "center", paddingVertical: 12, paddingHorizontal: 16 },
-    specRowBorder:  { borderTopWidth: 1, borderTopColor: C.border },
-    specKey:        { flex: 1, color: C.textSub, fontSize: 11, textAlign: "center", letterSpacing: 0.5, textTransform: "uppercase" },
-    specValue:      { flex: 1.4, color: C.textPrimary, fontSize: 13, fontWeight: "500" },
+    specsCard: { backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.border, marginBottom: 28, overflow: "hidden" },
+    specRow: { flexDirection: "row", alignItems: "center", paddingVertical: 12, paddingHorizontal: 16 },
+    specRowBorder: { borderTopWidth: 1, borderTopColor: C.border },
+    specKey: { flex: 1, color: C.textSub, fontSize: 11, textAlign: "center", letterSpacing: 0.5, textTransform: "uppercase" },
+    specValue: { flex: 1.4, color: C.textPrimary, fontSize: 13, fontWeight: "500" },
     specValueRight: { textAlign: "right" },
 
-    proConRow:        { flexDirection: "row", gap: 10, marginBottom: 28 },
-    proConCard:       { flex: 1, backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.border, padding: 14, gap: 8, overflow: "hidden" },
+    proConRow: { flexDirection: "row", gap: 10, marginBottom: 28 },
+    proConCard: { flex: 1, backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.border, padding: 14, gap: 8, overflow: "hidden" },
     proConCardWinner: { borderColor: C.limeDim },
-    proConWinStripe:  { position: "absolute", top: 0, left: 0, right: 0, height: 3, backgroundColor: C.lime },
-    proConName:       { color: C.textPrimary, fontSize: 12, fontWeight: "700", marginBottom: 4 },
-    proConLine:       { flexDirection: "row", gap: 6, alignItems: "flex-start" },
-    proIcon:          { color: C.lime, fontSize: 13, fontWeight: "800", marginTop: 1 },
-    conIcon:          { color: C.red,  fontSize: 13, fontWeight: "800", marginTop: 1 },
-    proText:          { color: C.textPrimary, fontSize: 12, flex: 1, lineHeight: 17 },
-    conText:          { color: C.textSub,    fontSize: 12, flex: 1, lineHeight: 17 },
+    proConWinStripe: { position: "absolute", top: 0, left: 0, right: 0, height: 3, backgroundColor: C.lime },
+    proConName: { color: C.textPrimary, fontSize: 12, fontWeight: "700", marginBottom: 4 },
+    proConLine: { flexDirection: "row", gap: 6, alignItems: "flex-start" },
+    proIcon: { color: C.lime, fontSize: 13, fontWeight: "800", marginTop: 1 },
+    conIcon: { color: C.red, fontSize: 13, fontWeight: "800", marginTop: 1 },
+    proText: { color: C.textPrimary, fontSize: 12, flex: 1, lineHeight: 17 },
+    conText: { color: C.textSub, fontSize: 12, flex: 1, lineHeight: 17 },
 
-    verdictCard:        { backgroundColor: C.aiCard, borderRadius: 16, borderWidth: 1, borderColor: C.aiBorder, padding: 20, marginBottom: 28, gap: 12 },
-    verdictHeader:      { flexDirection: "row", alignItems: "center", gap: 10 },
-    verdictIcon:        { color: C.lime, fontSize: 18 },
+    verdictCard: { backgroundColor: C.aiCard, borderRadius: 16, borderWidth: 1, borderColor: C.aiBorder, padding: 20, marginBottom: 28, gap: 12 },
+    verdictHeader: { flexDirection: "row", alignItems: "center", gap: 10 },
+    verdictIcon: { color: C.lime, fontSize: 18 },
     verdictWinnerLabel: { color: C.textSub, fontSize: 13 },
-    verdictWinnerName:  { color: C.lime, fontWeight: "700" },
-    verdictText:        { color: C.textPrimary, fontSize: 15, lineHeight: 24 },
+    verdictWinnerName: { color: C.lime, fontWeight: "700" },
+    verdictText: { color: C.textPrimary, fontSize: 15, lineHeight: 24 },
 
-    priceRow:        { flexDirection: "row", gap: 10, marginBottom: 28 },
-    priceCard:       { flex: 1, backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.border, padding: 16, alignItems: "center", gap: 6 },
+    priceRow: { flexDirection: "row", gap: 10, marginBottom: 28 },
+    priceCard: { flex: 1, backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.border, padding: 16, alignItems: "center", gap: 6 },
     priceCardWinner: { borderColor: C.limeDim },
-    priceName:       { color: C.textSub, fontSize: 11, textAlign: "center" },
-    priceAmount:     { fontSize: 26, fontWeight: "800" },
+    priceName: { color: C.textSub, fontSize: 11, textAlign: "center" },
+    priceAmount: { fontSize: 26, fontWeight: "800" },
 });
