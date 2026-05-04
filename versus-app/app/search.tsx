@@ -7,23 +7,12 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { ProductService } from "../api/product-service";
 import { FavoritesService } from "../api/favorites-service";
 import { Product } from "../types/Product";
-
-const C = {
-    bg: "#08080F",
-    card: "#111118",
-    border: "#1C1C2E",
-    lime: "#C8F135",
-    limeDim: "#8AAF22",
-    red: "#FF3B5C",
-    textPrimary: "#EEEEF8",
-    textSub: "#7070A0",
-    textDim: "#3A3A5C",
-    inputBg: "#0E0E1A",
-};
+import { useTheme } from "../theme";
 
 export default function Search() {
     const router = useRouter();
     const { category } = useLocalSearchParams<{ category: string }>();
+    const { colors, isDark } = useTheme();
     const productService = new ProductService();
     const favoritesService = new FavoritesService();
 
@@ -91,34 +80,36 @@ export default function Search() {
         router.push({ pathname: "/compare", params: { id1: selected[0]._id, id2: selected[1]._id } });
     }
 
+    const s = makeStyles(colors);
+
     if (loading) return (
-        <View style={styles.centered}>
-            <StatusBar barStyle="light-content" />
-            <ActivityIndicator size="large" color={C.lime} />
+        <View style={s.centered}>
+            <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+            <ActivityIndicator size="large" color={colors.lime} />
         </View>
     );
 
     if (error) return (
-        <View style={styles.centered}>
-            <StatusBar barStyle="light-content" />
-            <Text style={styles.errorText}>{error}</Text>
-            <TouchableOpacity onPress={loadProducts} style={styles.retryBtn}>
-                <Text style={styles.retryText}>Riprova</Text>
+        <View style={s.centered}>
+            <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+            <Text style={s.errorText}>{error}</Text>
+            <TouchableOpacity onPress={loadProducts} style={s.retryBtn}>
+                <Text style={s.retryText}>Riprova</Text>
             </TouchableOpacity>
         </View>
     );
 
     return (
-        <View style={styles.container}>
-            <StatusBar barStyle="light-content" />
+        <View style={s.container}>
+            <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-                    <Text style={styles.backArrow}>←</Text>
+            <View style={s.header}>
+                <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
+                    <Text style={s.backArrow}>←</Text>
                 </TouchableOpacity>
-                <View style={styles.headerText}>
-                    <Text style={styles.title}>{category}</Text>
-                    <Text style={styles.hint}>
+                <View style={s.headerText}>
+                    <Text style={s.title}>{category}</Text>
+                    <Text style={s.hint}>
                         {selected.length === 0 && "Seleziona due prodotti"}
                         {selected.length === 1 && "Seleziona ancora un prodotto"}
                         {selected.length === 2 && "Pronti per il confronto ✦"}
@@ -127,9 +118,9 @@ export default function Search() {
             </View>
 
             <TextInput
-                style={styles.searchInput}
+                style={s.searchInput}
                 placeholder="Cerca prodotto..."
-                placeholderTextColor={C.textDim}
+                placeholderTextColor={colors.textDim}
                 value={search}
                 onChangeText={setSearch}
                 onSubmitEditing={loadProducts}
@@ -148,22 +139,22 @@ export default function Search() {
 
                     return (
                         <TouchableOpacity
-                            style={[styles.card, isSelected && styles.cardSelected]}
+                            style={[s.card, isSelected && s.cardSelected]}
                             onPress={function () { toggleSelect(item); }}
                             activeOpacity={0.75}
                         >
-                            <View style={styles.cardRow}>
-                                <View style={styles.cardInfo}>
-                                    <Text style={styles.brand}>{item.brand.toUpperCase()}</Text>
-                                    <Text style={styles.name}>{item.name}</Text>
-                                    <Text style={styles.price}>€ {item.price}</Text>
+                            <View style={s.cardRow}>
+                                <View style={s.cardInfo}>
+                                    <Text style={s.brand}>{item.brand.toUpperCase()}</Text>
+                                    <Text style={s.name}>{item.name}</Text>
+                                    <Text style={s.price}>€ {item.price}</Text>
                                 </View>
 
-                                <View style={styles.rightColumn}>
+                                <View style={s.rightColumn}>
 
                                     {/* ⓘ — dettaglio prodotto */}
                                     <TouchableOpacity
-                                        style={styles.infoBtn}
+                                        style={s.infoBtn}
                                         onPress={function () {
                                             router.push({
                                                 pathname: "/products/[id]",
@@ -172,7 +163,7 @@ export default function Search() {
                                         }}
                                         hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                                     >
-                                        <Text style={styles.infoBtnText}>ⓘ</Text>
+                                        <Text style={s.infoBtnText}>ⓘ</Text>
                                     </TouchableOpacity>
 
                                     {/* ♥ — preferiti */}
@@ -180,15 +171,15 @@ export default function Search() {
                                         onPress={function () { handleToggleFavorite(item._id); }}
                                         hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
                                     >
-                                        <Text style={[styles.heartIcon, isFav && styles.heartActive]}>
+                                        <Text style={[s.heartIcon, isFav && s.heartActive]}>
                                             {isFav ? "♥" : "♡"}
                                         </Text>
                                     </TouchableOpacity>
 
                                     {/* Badge selezione */}
                                     {isSelected && (
-                                        <View style={styles.selectionBadge}>
-                                            <Text style={styles.selectionBadgeText}>{selIndex + 1}</Text>
+                                        <View style={s.selectionBadge}>
+                                            <Text style={s.selectionBadgeText}>{selIndex + 1}</Text>
                                         </View>
                                     )}
                                 </View>
@@ -196,30 +187,30 @@ export default function Search() {
                         </TouchableOpacity>
                     );
                 }}
-                ListEmptyComponent={<Text style={styles.emptyText}>Nessun prodotto trovato</Text>}
+                ListEmptyComponent={<Text style={s.emptyText}>Nessun prodotto trovato</Text>}
             />
 
             {selected.length > 0 && (
-                <View style={styles.compareBar}>
-                    <View style={styles.compareSlots}>
-                        <View style={[styles.slot, selected[0] && styles.slotFilled]}>
+                <View style={s.compareBar}>
+                    <View style={s.compareSlots}>
+                        <View style={[s.slot, selected[0] && s.slotFilled]}>
                             {selected[0]
-                                ? <><Text style={styles.slotNumber}>①</Text><Text style={styles.slotName} numberOfLines={1}>{selected[0].name}</Text></>
-                                : <Text style={styles.slotEmpty}>—</Text>}
+                                ? <><Text style={s.slotNumber}>①</Text><Text style={s.slotName} numberOfLines={1}>{selected[0].name}</Text></>
+                                : <Text style={s.slotEmpty}>—</Text>}
                         </View>
-                        <Text style={styles.vsText}>VS</Text>
-                        <View style={[styles.slot, selected[1] && styles.slotFilled]}>
+                        <Text style={s.vsText}>VS</Text>
+                        <View style={[s.slot, selected[1] && s.slotFilled]}>
                             {selected[1]
-                                ? <><Text style={styles.slotNumber}>②</Text><Text style={styles.slotName} numberOfLines={1}>{selected[1].name}</Text></>
-                                : <Text style={styles.slotEmpty}>—</Text>}
+                                ? <><Text style={s.slotNumber}>②</Text><Text style={s.slotName} numberOfLines={1}>{selected[1].name}</Text></>
+                                : <Text style={s.slotEmpty}>—</Text>}
                         </View>
                     </View>
                     <TouchableOpacity
-                        style={[styles.compareBtn, selected.length < 2 && styles.compareBtnDisabled]}
+                        style={[s.compareBtn, selected.length < 2 && s.compareBtnDisabled]}
                         onPress={handleCompare}
                         disabled={selected.length < 2}
                     >
-                        <Text style={styles.compareBtnText}>Confronta</Text>
+                        <Text style={s.compareBtnText}>Confronta</Text>
                     </TouchableOpacity>
                 </View>
             )}
@@ -227,51 +218,242 @@ export default function Search() {
     );
 }
 
-const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: C.bg, paddingHorizontal: 20, paddingTop: 60 },
-    centered: { flex: 1, backgroundColor: C.bg, justifyContent: "center", alignItems: "center" },
+// ── Stili dinamici (ricostruiti al cambio tema) ───────────────
+function makeStyles(C: ReturnType<typeof useTheme>["colors"]) {
+    return StyleSheet.create({
+        container: {
+            flex: 1,
+            backgroundColor: C.bg,
+            paddingHorizontal: 20,
+            paddingTop: 60,
+        },
+        centered: {
+            flex: 1,
+            backgroundColor: C.bg,
+            justifyContent: "center",
+            alignItems: "center",
+        },
 
-    header: { flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 20 },
-    backBtn: { backgroundColor: C.card, borderRadius: 12, borderWidth: 1, borderColor: C.border, width: 44, height: 44, justifyContent: "center", alignItems: "center" },
-    backArrow: { color: C.textSub, fontSize: 20 },
-    headerText: { flex: 1 },
-    title: { fontSize: 26, fontWeight: "900", color: C.textPrimary, textTransform: "capitalize" },
-    hint: { fontSize: 12, color: C.textSub, marginTop: 2 },
+        // Header
+        header: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 14,
+            marginBottom: 20,
+        },
+        backBtn: {
+            backgroundColor: C.card,
+            borderRadius: 12,
+            borderWidth: 1,
+            borderColor: C.border,
+            width: 44,
+            height: 44,
+            justifyContent: "center",
+            alignItems: "center",
+        },
+        backArrow: {
+            color: C.textSub,
+            fontSize: 20,
+        },
+        headerText: {
+            flex: 1,
+        },
+        title: {
+            fontSize: 26,
+            fontWeight: "900",
+            color: C.textPrimary,
+            textTransform: "capitalize",
+        },
+        hint: {
+            fontSize: 12,
+            color: C.textSub,
+            marginTop: 2,
+        },
 
-    searchInput: { backgroundColor: C.inputBg, borderRadius: 14, borderWidth: 1, borderColor: C.border, paddingHorizontal: 16, paddingVertical: 13, fontSize: 15, color: C.textPrimary, marginBottom: 16 },
+        // Search input
+        searchInput: {
+            backgroundColor: C.bgElevated,
+            borderRadius: 14,
+            borderWidth: 1,
+            borderColor: C.border,
+            paddingHorizontal: 16,
+            paddingVertical: 13,
+            fontSize: 15,
+            color: C.textPrimary,
+            marginBottom: 16,
+        },
 
-    card: { backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.border, padding: 16, marginBottom: 10 },
-    cardSelected: { borderColor: C.limeDim, backgroundColor: "#0F1A0A" },
-    cardRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-    cardInfo: { flex: 1 },
-    brand: { fontSize: 10, color: C.textSub, letterSpacing: 1.5, marginBottom: 4 },
-    name: { fontSize: 16, fontWeight: "700", color: C.textPrimary, marginBottom: 6 },
-    price: { fontSize: 18, fontWeight: "800", color: C.lime },
+        // Card prodotto
+        card: {
+            backgroundColor: C.card,
+            borderRadius: 16,
+            borderWidth: 1,
+            borderColor: C.border,
+            padding: 16,
+            marginBottom: 10,
+        },
+        cardSelected: {
+            borderColor: C.limeDim,
+            backgroundColor: C.limeFaint,
+        },
+        cardRow: {
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+        },
+        cardInfo: {
+            flex: 1,
+        },
+        brand: {
+            fontSize: 10,
+            color: C.textSub,
+            letterSpacing: 1.5,
+            marginBottom: 4,
+        },
+        name: {
+            fontSize: 16,
+            fontWeight: "700",
+            color: C.textPrimary,
+            marginBottom: 6,
+        },
+        price: {
+            fontSize: 18,
+            fontWeight: "800",
+            color: C.lime,
+        },
 
-    rightColumn: { alignItems: "center", gap: 8 },
+        // Colonna destra
+        rightColumn: {
+            alignItems: "center",
+            gap: 8,
+        },
+        infoBtn: {
+            backgroundColor: C.border,
+            borderRadius: 20,
+            width: 26,
+            height: 26,
+            justifyContent: "center",
+            alignItems: "center",
+        },
+        infoBtnText: {
+            color: C.textSub,
+            fontSize: 14,
+            fontWeight: "700",
+        },
+        heartIcon: {
+            fontSize: 18,
+            color: C.textDim,
+        },
+        heartActive: {
+            color: C.red,
+        },
+        selectionBadge: {
+            backgroundColor: C.lime,
+            borderRadius: 50,
+            width: 22,
+            height: 22,
+            justifyContent: "center",
+            alignItems: "center",
+        },
+        selectionBadgeText: {
+            color: C.textInverse,
+            fontWeight: "800",
+            fontSize: 11,
+        },
 
-    infoBtn: { backgroundColor: C.border, borderRadius: 20, width: 26, height: 26, justifyContent: "center", alignItems: "center" },
-    infoBtnText: { color: C.textSub, fontSize: 14, fontWeight: "700" },
+        // Stati vuoti ed errori
+        emptyText: {
+            textAlign: "center",
+            color: C.textSub,
+            marginTop: 48,
+            fontSize: 15,
+        },
+        errorText: {
+            fontSize: 16,
+            color: C.red,
+            marginBottom: 16,
+            textAlign: "center",
+        },
+        retryBtn: {
+            backgroundColor: C.lime,
+            padding: 12,
+            borderRadius: 10,
+        },
+        retryText: {
+            color: C.textInverse,
+            fontWeight: "bold",
+        },
 
-    heartIcon: { fontSize: 18, color: C.textDim },
-    heartActive: { color: C.red },
-    selectionBadge: { backgroundColor: C.lime, borderRadius: 50, width: 22, height: 22, justifyContent: "center", alignItems: "center" },
-    selectionBadgeText: { color: "#000", fontWeight: "800", fontSize: 11 },
-
-    emptyText: { textAlign: "center", color: C.textSub, marginTop: 48, fontSize: 15 },
-    errorText: { fontSize: 16, color: C.red, marginBottom: 16, textAlign: "center" },
-    retryBtn: { backgroundColor: C.lime, padding: 12, borderRadius: 10 },
-    retryText: { color: "#000", fontWeight: "bold" },
-
-    compareBar: { position: "absolute", bottom: 0, left: 0, right: 0, backgroundColor: C.card, borderTopLeftRadius: 24, borderTopRightRadius: 24, borderTopWidth: 1, borderColor: C.border, paddingHorizontal: 20, paddingVertical: 16, gap: 12, elevation: 16 },
-    compareSlots: { flexDirection: "row", alignItems: "center", gap: 8 },
-    slot: { flex: 1, backgroundColor: C.bg, borderRadius: 12, padding: 10, alignItems: "center", minHeight: 48, justifyContent: "center", borderWidth: 1, borderColor: C.border },
-    slotFilled: { backgroundColor: "#0F1A0A", borderColor: C.limeDim },
-    slotNumber: { fontSize: 14, color: C.lime },
-    slotName: { fontSize: 12, fontWeight: "600", color: C.textPrimary, textAlign: "center" },
-    slotEmpty: { fontSize: 20, color: C.textDim },
-    vsText: { fontSize: 12, fontWeight: "800", color: C.textDim, letterSpacing: 1 },
-    compareBtn: { backgroundColor: C.lime, borderRadius: 14, paddingVertical: 15, alignItems: "center" },
-    compareBtnDisabled: { backgroundColor: C.limeDim, opacity: 0.4 },
-    compareBtnText: { color: "#000", fontWeight: "800", fontSize: 16 },
-});
+        // Barra confronto
+        compareBar: {
+            position: "absolute",
+            bottom: 0,
+            left: 0,
+            right: 0,
+            backgroundColor: C.card,
+            borderTopLeftRadius: 24,
+            borderTopRightRadius: 24,
+            borderTopWidth: 1,
+            borderColor: C.border,
+            paddingHorizontal: 20,
+            paddingVertical: 16,
+            gap: 12,
+            elevation: 16,
+        },
+        compareSlots: {
+            flexDirection: "row",
+            alignItems: "center",
+            gap: 8,
+        },
+        slot: {
+            flex: 1,
+            backgroundColor: C.bg,
+            borderRadius: 12,
+            padding: 10,
+            alignItems: "center",
+            minHeight: 48,
+            justifyContent: "center",
+            borderWidth: 1,
+            borderColor: C.border,
+        },
+        slotFilled: {
+            backgroundColor: C.limeFaint,
+            borderColor: C.limeDim,
+        },
+        slotNumber: {
+            fontSize: 14,
+            color: C.lime,
+        },
+        slotName: {
+            fontSize: 12,
+            fontWeight: "600",
+            color: C.textPrimary,
+            textAlign: "center",
+        },
+        slotEmpty: {
+            fontSize: 20,
+            color: C.textDim,
+        },
+        vsText: {
+            fontSize: 12,
+            fontWeight: "800",
+            color: C.textDim,
+            letterSpacing: 1,
+        },
+        compareBtn: {
+            backgroundColor: C.lime,
+            borderRadius: 14,
+            paddingVertical: 15,
+            alignItems: "center",
+        },
+        compareBtnDisabled: {
+            backgroundColor: C.limeDim,
+            opacity: 0.4,
+        },
+        compareBtnText: {
+            color: C.textInverse,
+            fontWeight: "800",
+            fontSize: 16,
+        },
+    });
+}
