@@ -4,6 +4,7 @@ import {
     StyleSheet, ActivityIndicator, TextInput, StatusBar
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { ProductService } from "../api/product-service";
 import { FavoritesService } from "../api/favorites-service";
 import { Product } from "../types/Product";
@@ -11,8 +12,8 @@ import { useTheme } from "../theme";
 
 export default function Search() {
     const router = useRouter();
-    const { category } = useLocalSearchParams<{ category: string }>();
     const { colors, isDark } = useTheme();
+    const { category } = useLocalSearchParams<{ category: string }>();
     const productService = new ProductService();
     const favoritesService = new FavoritesService();
 
@@ -92,6 +93,7 @@ export default function Search() {
     if (error) return (
         <View style={s.centered}>
             <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+            <Ionicons name="cloud-offline-outline" size={44} color={colors.textDim} />
             <Text style={s.errorText}>{error}</Text>
             <TouchableOpacity onPress={loadProducts} style={s.retryBtn}>
                 <Text style={s.retryText}>Riprova</Text>
@@ -103,34 +105,40 @@ export default function Search() {
         <View style={s.container}>
             <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
+            {/* ── Header ───────────────────────────────────── */}
             <View style={s.header}>
-                <TouchableOpacity onPress={() => router.back()} style={s.backBtn}>
-                    <Text style={s.backArrow}>←</Text>
+                <TouchableOpacity onPress={() => router.back()} style={s.iconBtn}>
+                    <Ionicons name="arrow-back" size={22} color={colors.textSub} />
                 </TouchableOpacity>
                 <View style={s.headerText}>
                     <Text style={s.title}>{category}</Text>
                     <Text style={s.hint}>
-                        {selected.length === 0 && "Seleziona due prodotti"}
+                        {selected.length === 0 && "Seleziona due prodotti da confrontare"}
                         {selected.length === 1 && "Seleziona ancora un prodotto"}
-                        {selected.length === 2 && "Pronti per il confronto ✦"}
+                        {selected.length === 2 && "Pronti per il confronto!"}
                     </Text>
                 </View>
             </View>
 
-            <TextInput
-                style={s.searchInput}
-                placeholder="Cerca prodotto..."
-                placeholderTextColor={colors.textDim}
-                value={search}
-                onChangeText={setSearch}
-                onSubmitEditing={loadProducts}
-                returnKeyType="search"
-            />
+            {/* ── Ricerca ──────────────────────────────────── */}
+            <View style={s.searchWrapper}>
+                <Ionicons name="search-outline" size={18} color={colors.textDim} style={{ marginRight: 8 }} />
+                <TextInput
+                    style={s.searchInput}
+                    placeholder="Cerca prodotto..."
+                    placeholderTextColor={colors.textDim}
+                    value={search}
+                    onChangeText={setSearch}
+                    onSubmitEditing={loadProducts}
+                    returnKeyType="search"
+                />
+            </View>
 
+            {/* ── Lista prodotti ────────────────────────────── */}
             <FlatList
                 data={products}
                 keyExtractor={function (item) { return item._id; }}
-                contentContainerStyle={{ paddingBottom: selected.length > 0 ? 140 : 24 }}
+                contentContainerStyle={{ paddingBottom: selected.length > 0 ? 150 : 24 }}
                 showsVerticalScrollIndicator={false}
                 renderItem={function ({ item }) {
                     const selIndex = getSelectionIndex(item._id);
@@ -143,6 +151,9 @@ export default function Search() {
                             onPress={function () { toggleSelect(item); }}
                             activeOpacity={0.75}
                         >
+                            {/* Strisce laterale verde se selezionato */}
+                            {isSelected && <View style={s.cardStripe} />}
+
                             <View style={s.cardRow}>
                                 <View style={s.cardInfo}>
                                     <Text style={s.brand}>{item.brand.toUpperCase()}</Text>
@@ -152,64 +163,84 @@ export default function Search() {
 
                                 <View style={s.rightColumn}>
 
-                                    {/* ⓘ — dettaglio prodotto */}
-                                    <TouchableOpacity
-                                        style={s.infoBtn}
-                                        onPress={function () {
-                                            router.push({
-                                                pathname: "/products/[id]",
-                                                params: { id: item._id }
-                                            });
-                                        }}
-                                        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                                    >
-                                        <Text style={s.infoBtnText}>ⓘ</Text>
-                                    </TouchableOpacity>
-
-                                    {/* ♥ — preferiti */}
-                                    <TouchableOpacity
-                                        onPress={function () { handleToggleFavorite(item._id); }}
-                                        hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
-                                    >
-                                        <Text style={[s.heartIcon, isFav && s.heartActive]}>
-                                            {isFav ? "♥" : "♡"}
-                                        </Text>
-                                    </TouchableOpacity>
-
-                                    {/* Badge selezione */}
+                                    {/* Badge numero selezione */}
                                     {isSelected && (
                                         <View style={s.selectionBadge}>
                                             <Text style={s.selectionBadgeText}>{selIndex + 1}</Text>
                                         </View>
                                     )}
+
+                                    {/* ⓘ info prodotto */}
+                                    <TouchableOpacity
+                                        style={s.iconCircle}
+                                        onPress={function () {
+                                            router.push({ pathname: "/products/[id]", params: { id: item._id } });
+                                        }}
+                                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                    >
+                                        <Ionicons name="information-circle-outline" size={22} color={colors.textSub} />
+                                    </TouchableOpacity>
+
+                                    {/* ♥ preferiti */}
+                                    <TouchableOpacity
+                                        onPress={function () { handleToggleFavorite(item._id); }}
+                                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                    >
+                                        <Ionicons
+                                            name={isFav ? "heart" : "heart-outline"}
+                                            size={22}
+                                            color={isFav ? colors.red : colors.textDim}
+                                        />
+                                    </TouchableOpacity>
                                 </View>
                             </View>
                         </TouchableOpacity>
                     );
                 }}
-                ListEmptyComponent={<Text style={s.emptyText}>Nessun prodotto trovato</Text>}
+                ListEmptyComponent={
+                    <View style={s.emptyContainer}>
+                        <Ionicons name="search-outline" size={48} color={colors.textDim} />
+                        <Text style={s.emptyText}>Nessun prodotto trovato</Text>
+                    </View>
+                }
             />
 
+            {/* ── Barra confronto sticky ────────────────────── */}
             {selected.length > 0 && (
                 <View style={s.compareBar}>
                     <View style={s.compareSlots}>
                         <View style={[s.slot, selected[0] && s.slotFilled]}>
-                            {selected[0]
-                                ? <><Text style={s.slotNumber}>①</Text><Text style={s.slotName} numberOfLines={1}>{selected[0].name}</Text></>
-                                : <Text style={s.slotEmpty}>—</Text>}
+                            {selected[0] ? (
+                                <>
+                                    <Text style={s.slotNumber}>①</Text>
+                                    <Text style={s.slotName} numberOfLines={1}>{selected[0].name}</Text>
+                                </>
+                            ) : (
+                                <Ionicons name="add-circle-outline" size={22} color={colors.textDim} />
+                            )}
                         </View>
+
                         <Text style={s.vsText}>VS</Text>
+
                         <View style={[s.slot, selected[1] && s.slotFilled]}>
-                            {selected[1]
-                                ? <><Text style={s.slotNumber}>②</Text><Text style={s.slotName} numberOfLines={1}>{selected[1].name}</Text></>
-                                : <Text style={s.slotEmpty}>—</Text>}
+                            {selected[1] ? (
+                                <>
+                                    <Text style={s.slotNumber}>②</Text>
+                                    <Text style={s.slotName} numberOfLines={1}>{selected[1].name}</Text>
+                                </>
+                            ) : (
+                                <Ionicons name="add-circle-outline" size={22} color={colors.textDim} />
+                            )}
                         </View>
                     </View>
+
                     <TouchableOpacity
                         style={[s.compareBtn, selected.length < 2 && s.compareBtnDisabled]}
                         onPress={handleCompare}
                         disabled={selected.length < 2}
+                        activeOpacity={0.85}
                     >
+                        <Ionicons name="git-compare-outline" size={18} color={colors.textInverse} style={{ marginRight: 8 }} />
                         <Text style={s.compareBtnText}>Confronta</Text>
                     </TouchableOpacity>
                 </View>
@@ -218,242 +249,72 @@ export default function Search() {
     );
 }
 
-// ── Stili dinamici (ricostruiti al cambio tema) ───────────────
 function makeStyles(C: ReturnType<typeof useTheme>["colors"]) {
     return StyleSheet.create({
-        container: {
-            flex: 1,
-            backgroundColor: C.bg,
-            paddingHorizontal: 20,
-            paddingTop: 60,
-        },
-        centered: {
-            flex: 1,
-            backgroundColor: C.bg,
-            justifyContent: "center",
-            alignItems: "center",
-        },
+        container: { flex: 1, backgroundColor: C.bg, paddingHorizontal: 20, paddingTop: 60 },
+        centered: { flex: 1, backgroundColor: C.bg, justifyContent: "center", alignItems: "center", gap: 16 },
 
-        // Header
-        header: {
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 14,
-            marginBottom: 20,
-        },
-        backBtn: {
-            backgroundColor: C.card,
-            borderRadius: 12,
-            borderWidth: 1,
-            borderColor: C.border,
-            width: 44,
-            height: 44,
-            justifyContent: "center",
-            alignItems: "center",
-        },
-        backArrow: {
-            color: C.textSub,
-            fontSize: 20,
-        },
-        headerText: {
-            flex: 1,
-        },
-        title: {
-            fontSize: 26,
-            fontWeight: "900",
-            color: C.textPrimary,
-            textTransform: "capitalize",
-        },
-        hint: {
-            fontSize: 12,
-            color: C.textSub,
-            marginTop: 2,
-        },
+        header: { flexDirection: "row", alignItems: "center", gap: 14, marginBottom: 18 },
+        iconBtn: { backgroundColor: C.card, borderRadius: 14, borderWidth: 1, borderColor: C.border, width: 46, height: 46, justifyContent: "center", alignItems: "center" },
+        headerText: { flex: 1 },
+        title: { fontSize: 26, fontWeight: "900", color: C.textPrimary, textTransform: "capitalize" },
+        hint: { fontSize: 13, color: C.textSub, marginTop: 3, fontWeight: "500" },
 
-        // Search input
-        searchInput: {
-            backgroundColor: C.bgElevated,
-            borderRadius: 14,
-            borderWidth: 1,
-            borderColor: C.border,
-            paddingHorizontal: 16,
-            paddingVertical: 13,
-            fontSize: 15,
-            color: C.textPrimary,
-            marginBottom: 16,
+        searchWrapper: {
+            flexDirection: "row", alignItems: "center",
+            backgroundColor: C.inputBg, borderRadius: 14,
+            borderWidth: 1, borderColor: C.border,
+            paddingHorizontal: 14, marginBottom: 16,
         },
+        searchInput: { flex: 1, paddingVertical: 13, fontSize: 15, color: C.textPrimary },
 
-        // Card prodotto
         card: {
-            backgroundColor: C.card,
-            borderRadius: 16,
-            borderWidth: 1,
-            borderColor: C.border,
-            padding: 16,
-            marginBottom: 10,
+            backgroundColor: C.card, borderRadius: 16,
+            borderWidth: 1, borderColor: C.border,
+            padding: 16, marginBottom: 10,
+            flexDirection: "row", overflow: "hidden",
         },
-        cardSelected: {
-            borderColor: C.limeDim,
-            backgroundColor: C.limeFaint,
-        },
-        cardRow: {
-            flexDirection: "row",
-            justifyContent: "space-between",
-            alignItems: "center",
-        },
-        cardInfo: {
-            flex: 1,
-        },
-        brand: {
-            fontSize: 10,
-            color: C.textSub,
-            letterSpacing: 1.5,
-            marginBottom: 4,
-        },
-        name: {
-            fontSize: 16,
-            fontWeight: "700",
-            color: C.textPrimary,
-            marginBottom: 6,
-        },
-        price: {
-            fontSize: 18,
-            fontWeight: "800",
-            color: C.lime,
-        },
+        cardSelected: { borderColor: C.limeDim, backgroundColor: C.slotSelected },
+        cardStripe: { position: "absolute", left: 0, top: 0, bottom: 0, width: 3, backgroundColor: C.lime },
+        cardRow: { flex: 1, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+        cardInfo: { flex: 1 },
+        brand: { fontSize: 11, color: C.textSub, letterSpacing: 1.5, marginBottom: 4, fontWeight: "600" },
+        name: { fontSize: 16, fontWeight: "700", color: C.textPrimary, marginBottom: 6, lineHeight: 22 },
+        price: { fontSize: 19, fontWeight: "800", color: C.lime },
 
-        // Colonna destra
-        rightColumn: {
-            alignItems: "center",
-            gap: 8,
-        },
-        infoBtn: {
-            backgroundColor: C.border,
-            borderRadius: 20,
-            width: 26,
-            height: 26,
-            justifyContent: "center",
-            alignItems: "center",
-        },
-        infoBtnText: {
-            color: C.textSub,
-            fontSize: 14,
-            fontWeight: "700",
-        },
-        heartIcon: {
-            fontSize: 18,
-            color: C.textDim,
-        },
-        heartActive: {
-            color: C.red,
-        },
-        selectionBadge: {
-            backgroundColor: C.lime,
-            borderRadius: 50,
-            width: 22,
-            height: 22,
-            justifyContent: "center",
-            alignItems: "center",
-        },
-        selectionBadgeText: {
-            color: C.textInverse,
-            fontWeight: "800",
-            fontSize: 11,
-        },
+        rightColumn: { alignItems: "center", gap: 10, paddingLeft: 12 },
+        selectionBadge: { backgroundColor: C.lime, borderRadius: 50, width: 24, height: 24, justifyContent: "center", alignItems: "center" },
+        selectionBadgeText: { color: C.textInverse, fontWeight: "800", fontSize: 12 },
+        iconCircle: { padding: 2 },
 
-        // Stati vuoti ed errori
-        emptyText: {
-            textAlign: "center",
-            color: C.textSub,
-            marginTop: 48,
-            fontSize: 15,
-        },
-        errorText: {
-            fontSize: 16,
-            color: C.red,
-            marginBottom: 16,
-            textAlign: "center",
-        },
-        retryBtn: {
-            backgroundColor: C.lime,
-            padding: 12,
-            borderRadius: 10,
-        },
-        retryText: {
-            color: C.textInverse,
-            fontWeight: "bold",
-        },
+        emptyContainer: { alignItems: "center", marginTop: 64, gap: 12 },
+        emptyText: { color: C.textSub, fontSize: 15, textAlign: "center" },
+        errorText: { fontSize: 15, color: C.red, textAlign: "center", paddingHorizontal: 32 },
+        retryBtn: { backgroundColor: C.lime, paddingHorizontal: 24, paddingVertical: 12, borderRadius: 12 },
+        retryText: { color: C.textInverse, fontWeight: "700", fontSize: 15 },
 
-        // Barra confronto
         compareBar: {
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
+            position: "absolute", bottom: 0, left: 0, right: 0,
             backgroundColor: C.card,
-            borderTopLeftRadius: 24,
-            borderTopRightRadius: 24,
-            borderTopWidth: 1,
-            borderColor: C.border,
-            paddingHorizontal: 20,
-            paddingVertical: 16,
-            gap: 12,
+            borderTopLeftRadius: 24, borderTopRightRadius: 24,
+            borderTopWidth: 1, borderColor: C.border,
+            paddingHorizontal: 20, paddingVertical: 16, gap: 12,
             elevation: 16,
+            shadowColor: "#000", shadowOffset: { width: 0, height: -4 },
+            shadowOpacity: 0.15, shadowRadius: 12,
         },
-        compareSlots: {
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 8,
-        },
+        compareSlots: { flexDirection: "row", alignItems: "center", gap: 8 },
         slot: {
-            flex: 1,
-            backgroundColor: C.bg,
-            borderRadius: 12,
-            padding: 10,
-            alignItems: "center",
-            minHeight: 48,
-            justifyContent: "center",
-            borderWidth: 1,
-            borderColor: C.border,
+            flex: 1, backgroundColor: C.bg, borderRadius: 12,
+            padding: 10, alignItems: "center", minHeight: 50,
+            justifyContent: "center", borderWidth: 1, borderColor: C.border,
         },
-        slotFilled: {
-            backgroundColor: C.limeFaint,
-            borderColor: C.limeDim,
-        },
-        slotNumber: {
-            fontSize: 14,
-            color: C.lime,
-        },
-        slotName: {
-            fontSize: 12,
-            fontWeight: "600",
-            color: C.textPrimary,
-            textAlign: "center",
-        },
-        slotEmpty: {
-            fontSize: 20,
-            color: C.textDim,
-        },
-        vsText: {
-            fontSize: 12,
-            fontWeight: "800",
-            color: C.textDim,
-            letterSpacing: 1,
-        },
-        compareBtn: {
-            backgroundColor: C.lime,
-            borderRadius: 14,
-            paddingVertical: 15,
-            alignItems: "center",
-        },
-        compareBtnDisabled: {
-            backgroundColor: C.limeDim,
-            opacity: 0.4,
-        },
-        compareBtnText: {
-            color: C.textInverse,
-            fontWeight: "800",
-            fontSize: 16,
-        },
+        slotFilled: { backgroundColor: C.slotSelected, borderColor: C.limeDim },
+        slotNumber: { fontSize: 14, color: C.lime, fontWeight: "700" },
+        slotName: { fontSize: 12, fontWeight: "600", color: C.textPrimary, textAlign: "center", marginTop: 2 },
+        vsText: { fontSize: 13, fontWeight: "800", color: C.textDim, letterSpacing: 1 },
+        compareBtn: { flexDirection: "row", backgroundColor: C.lime, borderRadius: 14, paddingVertical: 15, alignItems: "center", justifyContent: "center" },
+        compareBtnDisabled: { opacity: 0.35 },
+        compareBtnText: { color: C.textInverse, fontWeight: "800", fontSize: 16 },
     });
 }

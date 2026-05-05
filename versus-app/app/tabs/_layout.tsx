@@ -1,36 +1,24 @@
 import { Tabs } from "expo-router";
-import { Text } from "react-native";
-
-const C = {
-    card: "#111118",
-    border: "#1C1C2E",
-    lime: "#C8F135",
-    textSub: "#7070A0",
-};
-
-function TabIcon({ emoji, focused }: { emoji: string; focused: boolean }) {
-    return (
-        <Text style={{ fontSize: 20, opacity: focused ? 1 : 0.4 }}>
-            {emoji}
-        </Text>
-    );
-}
+import { Ionicons } from "@expo/vector-icons";
+import { useTheme } from "../../theme";
 
 export default function TabLayout() {
+    const { colors } = useTheme();
+
     return (
         <Tabs
             screenOptions={{
                 headerShown: false,
                 tabBarStyle: {
-                    backgroundColor: C.card,
-                    borderTopColor: C.border,
+                    backgroundColor: colors.card,
+                    borderTopColor: colors.border,
                     borderTopWidth: 1,
                     height: 64,
                     paddingBottom: 10,
                     paddingTop: 8,
                 },
-                tabBarActiveTintColor: C.lime,
-                tabBarInactiveTintColor: C.textSub,
+                tabBarActiveTintColor: colors.lime,
+                tabBarInactiveTintColor: colors.textSub,
                 tabBarLabelStyle: {
                     fontSize: 11,
                     fontWeight: "700",
@@ -42,21 +30,27 @@ export default function TabLayout() {
                 name="index"
                 options={{
                     title: "Home",
-                    tabBarIcon: ({ focused }) => <TabIcon emoji="⊞" focused={focused} />,
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="grid-outline" size={size} color={color} />
+                    ),
                 }}
             />
             <Tabs.Screen
                 name="favorites"
                 options={{
                     title: "Preferiti",
-                    tabBarIcon: ({ focused }) => <TabIcon emoji="♥" focused={focused} />,
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="heart-outline" size={size} color={color} />
+                    ),
                 }}
             />
             <Tabs.Screen
                 name="history"
                 options={{
                     title: "Storico",
-                    tabBarIcon: ({ focused }) => <TabIcon emoji="◷" focused={focused} />,
+                    tabBarIcon: ({ color, size }) => (
+                        <Ionicons name="time-outline" size={size} color={color} />
+                    ),
                 }}
             />
         </Tabs>

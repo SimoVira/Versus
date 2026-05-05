@@ -1,34 +1,25 @@
 import { useEffect, useState, useRef } from "react";
 import {
-    View, Text, ScrollView, StyleSheet,
+    View, Text, StyleSheet,
     ActivityIndicator, TouchableOpacity, FlatList,
     Dimensions, Animated, StatusBar
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useTheme } from "../../theme";
 import { ProductService } from "../../api/product-service";
 import { FavoritesService } from "../../api/favorites-service";
 import { Product } from "../../types/Product";
 
 const { width } = Dimensions.get("window");
 
-const C = {
-    bg: "#08080F",
-    card: "#111118",
-    border: "#1C1C2E",
-    lime: "#C8F135",
-    limeDim: "#8AAF22",
-    red: "#FF3B5C",
-    textPrimary: "#EEEEF8",
-    textSub: "#7070A0",
-    textDim: "#3A3A5C",
-    imageBg: "#0E0E1A",
-};
-
 export default function ProductDetail() {
     const router = useRouter();
+    const { colors, isDark } = useTheme();
     const { id } = useLocalSearchParams<{ id: string }>();
     const productService = new ProductService();
     const favoritesService = new FavoritesService();
+
+    const s = makeStyles(colors);
 
     const [product, setProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState(true);
@@ -63,18 +54,18 @@ export default function ProductDetail() {
     }
 
     if (loading) return (
-        <View style={styles.centered}>
-            <StatusBar barStyle="light-content" />
-            <ActivityIndicator size="large" color={C.lime} />
+        <View style={s.centered}>
+            <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+            <ActivityIndicator size="large" color={colors.lime} />
         </View>
     );
 
     if (error || !product) return (
-        <View style={styles.centered}>
-            <StatusBar barStyle="light-content" />
-            <Text style={styles.errorText}>{error ?? "Prodotto non trovato"}</Text>
-            <TouchableOpacity style={styles.backBtnError} onPress={() => router.back()}>
-                <Text style={styles.backBtnErrorText}>← Torna indietro</Text>
+        <View style={s.centered}>
+            <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
+            <Text style={s.errorText}>{error ?? "Prodotto non trovato"}</Text>
+            <TouchableOpacity style={s.backBtnError} onPress={() => router.back()}>
+                <Text style={s.backBtnErrorText}>← Torna indietro</Text>
             </TouchableOpacity>
         </View>
     );
@@ -82,16 +73,16 @@ export default function ProductDetail() {
     const specs = product.specs as Record<string, any>;
 
     return (
-        <View style={styles.root}>
-            <StatusBar barStyle="light-content" />
+        <View style={s.root}>
+            <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
-            <View style={styles.topBar}>
-                <TouchableOpacity style={styles.topBtn} onPress={() => router.back()}>
-                    <Text style={styles.topBtnText}>←</Text>
+            <View style={s.topBar}>
+                <TouchableOpacity style={s.topBtn} onPress={() => router.back()}>
+                    <Text style={s.topBtnText}>←</Text>
                 </TouchableOpacity>
-                <Text style={styles.topBarTitle} numberOfLines={1}>{product.name}</Text>
-                <TouchableOpacity style={styles.topBtn} onPress={handleToggleFavorite}>
-                    <Text style={[styles.heartIcon, isFavorite && styles.heartActive]}>
+                <Text style={s.topBarTitle} numberOfLines={1}>{product.name}</Text>
+                <TouchableOpacity style={s.topBtn} onPress={handleToggleFavorite}>
+                    <Text style={[s.heartIcon, isFavorite && s.heartActive]}>
                         {isFavorite ? "♥" : "♡"}
                     </Text>
                 </TouchableOpacity>
@@ -100,10 +91,10 @@ export default function ProductDetail() {
             <Animated.ScrollView
                 style={{ opacity: fadeIn }}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={styles.scroll}
+                contentContainerStyle={s.scroll}
             >
                 {product.images && product.images.length > 0 && (
-                    <View style={styles.imageContainer}>
+                    <View style={s.imageContainer}>
                         <FlatList
                             data={product.images}
                             horizontal
@@ -115,19 +106,19 @@ export default function ProductDetail() {
                             }}
                             renderItem={function ({ item }) {
                                 return (
-                                    <View style={styles.imageWrapper}>
-                                        <Text style={styles.imagePlaceholder}>📷</Text>
-                                        {/* Sostituisci con <Image source={{ uri: item }} style={styles.image} resizeMode="contain" /> */}
+                                    <View style={s.imageWrapper}>
+                                        <Text style={s.imagePlaceholder}>📷</Text>
+                                        {/* Sostituisci con <Image source={{ uri: item }} style={s.image} resizeMode="contain" /> */}
                                     </View>
                                 );
                             }}
                             keyExtractor={function (_, i) { return String(i); }}
                         />
                         {product.images.length > 1 && (
-                            <View style={styles.dots}>
+                            <View style={s.dots}>
                                 {product.images.map(function (_, i) {
                                     return (
-                                        <View key={i} style={[styles.dot, i === currentImage && styles.dotActive]} />
+                                        <View key={i} style={[s.dot, i === currentImage && s.dotActive]} />
                                     );
                                 })}
                             </View>
@@ -135,19 +126,19 @@ export default function ProductDetail() {
                     </View>
                 )}
 
-                <View style={styles.infoCard}>
-                    <View style={styles.infoRow}>
-                        <View style={styles.categoryTag}>
-                            <Text style={styles.categoryTagText}>{product.category.toUpperCase()}</Text>
+                <View style={s.infoCard}>
+                    <View style={s.infoRow}>
+                        <View style={s.categoryTag}>
+                            <Text style={s.categoryTagText}>{product.category.toUpperCase()}</Text>
                         </View>
                     </View>
-                    <Text style={styles.brand}>{product.brand.toUpperCase()}</Text>
-                    <Text style={styles.name}>{product.name}</Text>
-                    <Text style={styles.price}>€ {product.price.toFixed(2)}</Text>
+                    <Text style={s.brand}>{product.brand.toUpperCase()}</Text>
+                    <Text style={s.name}>{product.name}</Text>
+                    <Text style={s.price}>€ {product.price.toFixed(2)}</Text>
                 </View>
 
-                <SectionLabel text="SPECIFICHE" />
-                <View style={styles.specsCard}>
+                <SectionLabel text="SPECIFICHE" colors={colors} />
+                <View style={s.specsCard}>
                     {Object.entries(specs).map(function ([key, value], i) {
                         const display = Array.isArray(value)
                             ? value.join(", ")
@@ -155,9 +146,9 @@ export default function ProductDetail() {
                                 ? value ? "Sì" : "No"
                                 : String(value);
                         return (
-                            <View key={key} style={[styles.specRow, i > 0 && styles.specRowBorder]}>
-                                <Text style={styles.specKey}>{key}</Text>
-                                <Text style={styles.specValue}>{display}</Text>
+                            <View key={key} style={[s.specRow, i > 0 && s.specRowBorder]}>
+                                <Text style={s.specKey}>{key}</Text>
+                                <Text style={s.specValue}>{display}</Text>
                             </View>
                         );
                     })}
@@ -165,13 +156,13 @@ export default function ProductDetail() {
 
                 {product.priceHistory && product.priceHistory.length > 0 && (
                     <>
-                        <SectionLabel text="STORICO PREZZI" />
-                        <View style={styles.specsCard}>
+                        <SectionLabel text="STORICO PREZZI" colors={colors} />
+                        <View style={s.specsCard}>
                             {product.priceHistory.slice().reverse().map(function (entry, i) {
                                 return (
-                                    <View key={i} style={[styles.specRow, i > 0 && styles.specRowBorder]}>
-                                        <Text style={styles.specKey}>{entry.date}</Text>
-                                        <Text style={[styles.specValue, { color: C.lime }]}>
+                                    <View key={i} style={[s.specRow, i > 0 && s.specRowBorder]}>
+                                        <Text style={s.specKey}>{entry.date}</Text>
+                                        <Text style={[s.specValue, { color: colors.lime }]}>
                                             € {entry.price.toFixed(2)}
                                         </Text>
                                     </View>
@@ -182,7 +173,7 @@ export default function ProductDetail() {
                 )}
 
                 <TouchableOpacity
-                    style={styles.compareBtn}
+                    style={s.compareBtn}
                     onPress={function () {
                         router.push({
                             pathname: "/search",
@@ -191,7 +182,7 @@ export default function ProductDetail() {
                     }}
                     activeOpacity={0.85}
                 >
-                    <Text style={styles.compareBtnText}>Confronta questo prodotto →</Text>
+                    <Text style={s.compareBtnText}>Confronta questo prodotto →</Text>
                 </TouchableOpacity>
 
                 <View style={{ height: 48 }} />
@@ -200,77 +191,82 @@ export default function ProductDetail() {
     );
 }
 
-function SectionLabel({ text }: { text: string }) {
+function SectionLabel({ text, colors }: { text: string; colors: ReturnType<typeof useTheme>["colors"] }) {
+    const s = makeStyles(colors);
     return (
-        <View style={styles.sectionLabelRow}>
-            <View style={styles.sectionLine} />
-            <Text style={styles.sectionLabel}>{text}</Text>
-            <View style={styles.sectionLine} />
+        <View style={s.sectionLabelRow}>
+            <View style={s.sectionLine} />
+            <Text style={s.sectionLabel}>{text}</Text>
+            <View style={s.sectionLine} />
         </View>
     );
 }
 
-const styles = StyleSheet.create({
-    root: { flex: 1, backgroundColor: C.bg },
-    scroll: { paddingHorizontal: 20, paddingBottom: 24 },
-    centered: { flex: 1, backgroundColor: C.bg, justifyContent: "center", alignItems: "center", gap: 16 },
+const styles = StyleSheet.create({});
 
-    // Top bar
-    topBar: {
-        flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-        paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16,
-        backgroundColor: C.bg,
-    },
-    topBtn: { backgroundColor: C.card, borderRadius: 12, borderWidth: 1, borderColor: C.border, width: 44, height: 44, justifyContent: "center", alignItems: "center" },
-    topBtnText: { color: C.textSub, fontSize: 20 },
-    topBarTitle: { flex: 1, color: C.textPrimary, fontSize: 14, fontWeight: "700", textAlign: "center", marginHorizontal: 12 },
-    heartIcon: { fontSize: 20, color: C.textDim },
-    heartActive: { color: C.red },
+function makeStyles(C: ReturnType<typeof useTheme>["colors"]) {
+    return StyleSheet.create({
+        root: { flex: 1, backgroundColor: C.bg },
+        scroll: { paddingHorizontal: 20, paddingBottom: 24 },
+        centered: { flex: 1, backgroundColor: C.bg, justifyContent: "center", alignItems: "center", gap: 16 },
 
-    // Immagini
-    imageContainer: { marginBottom: 20 },
-    imageWrapper: {
-        width: width - 40, height: 240,
-        backgroundColor: C.imageBg, borderRadius: 20,
-        borderWidth: 1, borderColor: C.border,
-        justifyContent: "center", alignItems: "center",
-    },
-    imagePlaceholder: { fontSize: 64, opacity: 0.3 },
-    dots: { flexDirection: "row", justifyContent: "center", marginTop: 10, gap: 6 },
-    dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.border },
-    dotActive: { backgroundColor: C.lime },
+        // Top bar
+        topBar: {
+            flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+            paddingHorizontal: 20, paddingTop: 56, paddingBottom: 16,
+            backgroundColor: C.bg,
+        },
+        topBtn: { backgroundColor: C.card, borderRadius: 12, borderWidth: 1, borderColor: C.border, width: 44, height: 44, justifyContent: "center", alignItems: "center" },
+        topBtnText: { color: C.textSub, fontSize: 20 },
+        topBarTitle: { flex: 1, color: C.textPrimary, fontSize: 14, fontWeight: "700", textAlign: "center", marginHorizontal: 12 },
+        heartIcon: { fontSize: 20, color: C.textDim },
+        heartActive: { color: C.red },
 
-    // Info card
-    infoCard: {
-        backgroundColor: C.card, borderRadius: 20,
-        borderWidth: 1, borderColor: C.border,
-        padding: 20, marginBottom: 8, gap: 6,
-    },
-    infoRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 },
-    categoryTag: { backgroundColor: C.border, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
-    categoryTagText: { color: C.textSub, fontSize: 10, fontWeight: "700", letterSpacing: 2 },
-    brand: { color: C.textSub, fontSize: 11, letterSpacing: 2 },
-    name: { color: C.textPrimary, fontSize: 22, fontWeight: "800", lineHeight: 28 },
-    price: { color: C.lime, fontSize: 28, fontWeight: "900", marginTop: 4 },
+        // Immagini
+        imageContainer: { marginBottom: 20 },
+        imageWrapper: {
+            width: width - 40, height: 240,
+            backgroundColor: C.bg, borderRadius: 20,
+            borderWidth: 1, borderColor: C.border,
+            justifyContent: "center", alignItems: "center",
+        },
+        imagePlaceholder: { fontSize: 64, opacity: 0.3 },
+        dots: { flexDirection: "row", justifyContent: "center", marginTop: 10, gap: 6 },
+        dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.border },
+        dotActive: { backgroundColor: C.lime },
 
-    // Section label
-    sectionLabelRow: { flexDirection: "row", alignItems: "center", marginVertical: 16 },
-    sectionLine: { flex: 1, height: 1, backgroundColor: C.border },
-    sectionLabel: { color: C.textSub, fontSize: 11, fontWeight: "700", letterSpacing: 2, marginHorizontal: 12 },
+        // Info card
+        infoCard: {
+            backgroundColor: C.card, borderRadius: 20,
+            borderWidth: 1, borderColor: C.border,
+            padding: 20, marginBottom: 8, gap: 6,
+        },
+        infoRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 },
+        categoryTag: { backgroundColor: C.border, borderRadius: 6, paddingHorizontal: 8, paddingVertical: 4 },
+        categoryTagText: { color: C.textSub, fontSize: 10, fontWeight: "700", letterSpacing: 2 },
+        brand: { color: C.textSub, fontSize: 11, letterSpacing: 2 },
+        name: { color: C.textPrimary, fontSize: 22, fontWeight: "800", lineHeight: 28 },
+        price: { color: C.lime, fontSize: 28, fontWeight: "900", marginTop: 4 },
 
-    // Specs
-    specsCard: { backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.border, overflow: "hidden" },
-    specRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 13, paddingHorizontal: 16 },
-    specRowBorder: { borderTopWidth: 1, borderTopColor: C.border },
-    specKey: { fontSize: 13, color: C.textSub, flex: 1 },
-    specValue: { fontSize: 13, color: C.textPrimary, fontWeight: "600", flex: 1, textAlign: "right" },
+        // Section label
+        sectionLabelRow: { flexDirection: "row", alignItems: "center", marginVertical: 16 },
+        sectionLine: { flex: 1, height: 1, backgroundColor: C.border },
+        sectionLabel: { color: C.textSub, fontSize: 11, fontWeight: "700", letterSpacing: 2, marginHorizontal: 12 },
 
-    // Bottone confronta
-    compareBtn: { backgroundColor: C.lime, borderRadius: 16, paddingVertical: 16, alignItems: "center", marginTop: 24 },
-    compareBtnText: { color: "#000", fontSize: 16, fontWeight: "800" },
+        // Specs
+        specsCard: { backgroundColor: C.card, borderRadius: 16, borderWidth: 1, borderColor: C.border, overflow: "hidden" },
+        specRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingVertical: 13, paddingHorizontal: 16 },
+        specRowBorder: { borderTopWidth: 1, borderTopColor: C.border },
+        specKey: { fontSize: 13, color: C.textSub, flex: 1 },
+        specValue: { fontSize: 13, color: C.textPrimary, fontWeight: "600", flex: 1, textAlign: "right" },
 
-    // Error
-    errorText: { color: C.red, fontSize: 16, textAlign: "center", paddingHorizontal: 32 },
-    backBtnError: { borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 20, paddingVertical: 10 },
-    backBtnErrorText: { color: C.textSub, fontSize: 14 },
-});
+        // Bottone confronta
+        compareBtn: { backgroundColor: C.lime, borderRadius: 16, paddingVertical: 16, alignItems: "center", marginTop: 24 },
+        compareBtnText: { color: "#000", fontSize: 16, fontWeight: "800" },
+
+        // Error
+        errorText: { color: C.red, fontSize: 16, textAlign: "center", paddingHorizontal: 32 },
+        backBtnError: { borderWidth: 1, borderColor: C.border, borderRadius: 10, paddingHorizontal: 20, paddingVertical: 10 },
+        backBtnErrorText: { color: C.textSub, fontSize: 14 },
+    });
+}

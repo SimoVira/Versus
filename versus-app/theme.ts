@@ -21,6 +21,10 @@ export const dark = {
     textSub: "#7070A0",
     textDim: "#3A3A5C",
     textInverse: "#08080F",
+    aiCard: "#0C1410",
+    aiBorder: "#2A4020",
+    inputBg: "#0E0E1A",
+    slotSelected: "#0F1A0A",
 };
 
 export const light = {
@@ -42,6 +46,10 @@ export const light = {
     textSub: "#6060A0",
     textDim: "#AFAFCF",
     textInverse: "#FFFFFF",
+    aiCard: "#F0F8EC",
+    aiBorder: "#C0DCA0",
+    inputBg: "#FFFFFF",
+    slotSelected: "#EEF8D8",
 };
 
 export type ThemeColors = typeof dark;
