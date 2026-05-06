@@ -5,6 +5,7 @@ import {
     Dimensions, Animated, StatusBar
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../theme";
 import { ProductService } from "../../api/product-service";
 import { FavoritesService } from "../../api/favorites-service";
@@ -26,6 +27,8 @@ export default function ProductDetail() {
     const [error, setError] = useState<string | null>(null);
     const [currentImage, setCurrentImage] = useState(0);
     const [isFavorite, setIsFavorite] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
+    const [refreshResult, setRefreshResult] = useState<{ ok: boolean; text: string } | null>(null);
     const fadeIn = useRef(new Animated.Value(0)).current;
 
     useEffect(function () {
@@ -51,6 +54,25 @@ export default function ProductDetail() {
         } catch (err: any) {
             console.error(err.message);
         }
+    }
+
+    function handleRefreshPrice() {
+        if (!product) return;
+        setRefreshing(true);
+        setRefreshResult(null);
+        productService.refreshPrice(product._id)
+            .then(function (data) {
+                setProduct(function (prev) {
+                    return prev ? { ...prev, price: data.price } : prev;
+                });
+                setRefreshResult({ ok: true, text: `€ ${data.price.toFixed(2)} · ${data.source}` });
+            })
+            .catch(function (err) {
+                setRefreshResult({ ok: false, text: err.message ?? "Errore di rete" });
+            })
+            .finally(function () {
+                setRefreshing(false);
+            });
     }
 
     if (loading) return (
@@ -134,7 +156,39 @@ export default function ProductDetail() {
                     </View>
                     <Text style={s.brand}>{product.brand.toUpperCase()}</Text>
                     <Text style={s.name}>{product.name}</Text>
-                    <Text style={s.price}>€ {product.price.toFixed(2)}</Text>
+
+                    {/* ── Prezzo + bottone refresh ── */}
+                    <View style={s.priceRow}>
+                        <Text style={s.price}>€ {product.price.toFixed(2)}</Text>
+                        <TouchableOpacity
+                            style={[s.refreshBtn, refreshing && s.refreshBtnDisabled]}
+                            onPress={handleRefreshPrice}
+                            disabled={refreshing}
+                            activeOpacity={0.75}
+                        >
+                            {refreshing
+                                ? <ActivityIndicator size="small" color={colors.lime} />
+                                : <Ionicons name="refresh-outline" size={16} color={colors.lime} />
+                            }
+                            <Text style={s.refreshBtnText}>
+                                {refreshing ? "Ricerca..." : "Aggiorna"}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* ── Feedback refresh ── */}
+                    {refreshResult && (
+                        <View style={[s.refreshResult, refreshResult.ok ? s.refreshResultOk : s.refreshResultErr]}>
+                            <Ionicons
+                                name={refreshResult.ok ? "checkmark-circle-outline" : "alert-circle-outline"}
+                                size={14}
+                                color={refreshResult.ok ? colors.lime : colors.red}
+                            />
+                            <Text style={[s.refreshResultText, { color: refreshResult.ok ? colors.lime : colors.red }]}>
+                                {refreshResult.ok ? `Prezzo aggiornato: ${refreshResult.text}` : refreshResult.text}
+                            </Text>
+                        </View>
+                    )}
                 </View>
 
                 <SectionLabel text="SPECIFICHE" colors={colors} />
@@ -161,7 +215,12 @@ export default function ProductDetail() {
                             {product.priceHistory.slice().reverse().map(function (entry, i) {
                                 return (
                                     <View key={i} style={[s.specRow, i > 0 && s.specRowBorder]}>
-                                        <Text style={s.specKey}>{entry.date}</Text>
+                                        <View style={s.historyLeft}>
+                                            <Text style={s.specKey}>{entry.date}</Text>
+                                            {entry.source && (
+                                                <Text style={s.historySource}>{entry.source}</Text>
+                                            )}
+                                        </View>
                                         <Text style={[s.specValue, { color: colors.lime }]}>
                                             € {entry.price.toFixed(2)}
                                         </Text>
@@ -201,8 +260,6 @@ function SectionLabel({ text, colors }: { text: string; colors: ReturnType<typeo
         </View>
     );
 }
-
-const styles = StyleSheet.create({});
 
 function makeStyles(C: ReturnType<typeof useTheme>["colors"]) {
     return StyleSheet.create({
@@ -246,7 +303,28 @@ function makeStyles(C: ReturnType<typeof useTheme>["colors"]) {
         categoryTagText: { color: C.textSub, fontSize: 10, fontWeight: "700", letterSpacing: 2 },
         brand: { color: C.textSub, fontSize: 11, letterSpacing: 2 },
         name: { color: C.textPrimary, fontSize: 22, fontWeight: "800", lineHeight: 28 },
-        price: { color: C.lime, fontSize: 28, fontWeight: "900", marginTop: 4 },
+
+        // Prezzo + refresh
+        priceRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 4 },
+        price: { color: C.lime, fontSize: 28, fontWeight: "900" },
+        refreshBtn: {
+            flexDirection: "row", alignItems: "center", gap: 6,
+            borderWidth: 1, borderColor: C.lime,
+            borderRadius: 10, paddingHorizontal: 12, paddingVertical: 7,
+            minWidth: 110, justifyContent: "center",
+        },
+        refreshBtnDisabled: { opacity: 0.5 },
+        refreshBtnText: { color: C.lime, fontSize: 13, fontWeight: "700" },
+
+        // Feedback refresh
+        refreshResult: {
+            flexDirection: "row", alignItems: "center", gap: 6,
+            borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8,
+            marginTop: 4,
+        },
+        refreshResultOk: { backgroundColor: `${C.lime}18` },
+        refreshResultErr: { backgroundColor: `${C.red}18` },
+        refreshResultText: { fontSize: 12, fontWeight: "600", flexShrink: 1 },
 
         // Section label
         sectionLabelRow: { flexDirection: "row", alignItems: "center", marginVertical: 16 },
@@ -259,6 +337,10 @@ function makeStyles(C: ReturnType<typeof useTheme>["colors"]) {
         specRowBorder: { borderTopWidth: 1, borderTopColor: C.border },
         specKey: { fontSize: 13, color: C.textSub, flex: 1 },
         specValue: { fontSize: 13, color: C.textPrimary, fontWeight: "600", flex: 1, textAlign: "right" },
+
+        // Storico prezzi
+        historyLeft: { flex: 1, gap: 2 },
+        historySource: { fontSize: 11, color: C.textDim },
 
         // Bottone confronta
         compareBtn: { backgroundColor: C.lime, borderRadius: 16, paddingVertical: 16, alignItems: "center", marginTop: 24 },

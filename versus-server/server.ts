@@ -19,6 +19,7 @@ const JWT_KEY = process.env.JWT_KEY!;
 const PORT = parseInt(process.env.PORT!);
 const TOKEN_EXPIRY = "7d";
 const SALT_ROUNDS = 10;
+const aiService = new AiService();
 
 //C. creazione ed avvio del server HTTP
 const server = http.createServer(app);
@@ -227,54 +228,63 @@ app.get("/api/products/:id", async function (req, res, next) {
     cmd.finally(function () { client.close(); });
 });
 
-// POST /api/products
-app.post("/api/products", async function (req, res, next) {
-    const newProduct = req.body;
+// ── PATCH /api/products/:id/refresh-price ─────────────────────────────────
+app.patch("/api/products/:id/refresh-price", async function (req, res, next) {
+    const id = req.params.id;
 
     const client = new MongoClient(connectionString);
     await client.connect().catch(function () {
-        res.status(503).send("Errore di connessione al dbms");
+        res.status(503).send({ err: "Errore di connessione al dbms" });
         return;
     });
+
     const collection = client.db(dbName).collection("products");
-    const cmd = collection.insertOne(newProduct);
-    cmd.then(function (data) { res.send(data); });
-    cmd.catch(function (err) { res.status(500).send("Errore inserimento: " + err); });
-    cmd.finally(function () { client.close(); });
+
+    const cmd1 = collection.findOne({ _id: new ObjectId(id) });
+    cmd1.then(async function (product) {
+        if (!product) {
+            res.status(404).send({ error: "Prodotto non trovato" });
+            return;
+        }
+
+        // ── Chiamata Gemini con Google Search Grounding ──
+        const priceRefreshResult = await aiService.refreshProductPrice(product.searchQuery);
+
+        // ── Aggiornamento MongoDB ──
+        const now = new Date();
+        const newPrice = {
+            price: priceRefreshResult.price,
+            date: now.toISOString().split("T")[0], // "2026-05-06"
+            source: priceRefreshResult.source ?? "gemini-grounding",
+        };
+
+        const cmd2 = collection.updateOne(
+            { _id: new ObjectId(id) },
+            {
+                $set: {
+                    price: priceRefreshResult.price,
+                    lastUpdate: now,
+                },
+                $push: {
+                    priceHistory: newPrice,
+                } as any,
+            });
+        cmd2.then(function () {
+            console.log("Prezzo aggiornato in MongoDB");
+            const priceRefreshResponse = {
+                price: priceRefreshResult.price,
+                source: priceRefreshResult.source ?? "gemini-grounding",
+            };
+            res.status(200).send(priceRefreshResponse);
+        });
+        cmd2.catch(function (err: any) { console.error("Errore aggiornamento MongoDB:", err); });
+        cmd2.finally(function () { client.close(); });
+    })
+    cmd1.catch((err) => {
+        console.error("refresh-price error:", err);
+        res.status(500).send({ error: "Errore interno del server" });
+    })
 });
-
-// PATCH /api/products/:id
-app.patch("/api/products/:id", async function (req, res, next) {
-    const _id = new ObjectId(req.params.id);
-    const fields = req.body;
-
-    const client = new MongoClient(connectionString);
-    await client.connect().catch(function () {
-        res.status(503).send("Errore di connessione al dbms");
-        return;
-    });
-    const collection = client.db(dbName).collection("products");
-    const cmd = collection.updateOne({ _id }, { $set: fields });
-    cmd.then(function (data) { res.send(data); });
-    cmd.catch(function (err) { res.status(500).send("Errore aggiornamento: " + err); });
-    cmd.finally(function () { client.close(); });
-});
-
-// DELETE /api/products/:id
-app.delete("/api/products/:id", async function (req, res, next) {
-    const client = new MongoClient(connectionString);
-    await client.connect().catch(function () {
-        res.status(503).send("Errore di connessione al dbms");
-        return;
-    });
-    const collection = client.db(dbName).collection("products");
-    const cmd = collection.deleteOne({ _id: new ObjectId(req.params.id) });
-    cmd.then(function (data) { res.send(data); });
-    cmd.catch(function (err) { res.status(500).send("Errore eliminazione: " + err); });
-    cmd.finally(function () { client.close(); });
-});
-
-
 
 // -----------------------------------------------------------------
 // PREFERITI
@@ -372,70 +382,9 @@ app.get("/api/favorites/check/:productId", async function (req, res, next) {
     cmd.finally(function () { client.close(); });
 });
 
-
-
 // -----------------------------------------------------------------
-// CONFRONTO (cuore di Versus)
+// STORICO CONFRONTI
 // -----------------------------------------------------------------
-app.post("/api/compare", async function (req, res, next) {
-    const json: any = req.body;
-    const ids: string[] = json.ids;
-
-    if (!ids || ids.length < 2) {
-        res.status(400).send({ err: "Seleziona almeno 2 prodotti da confrontare" });
-        return;
-    }
-
-    // ── Recupero prodotti da MongoDB ─────────────────────────
-    let p1: any, p2: any;
-    const mongoClient = new MongoClient(connectionString);
-    try {
-        await mongoClient.connect();
-        const collection = mongoClient.db(dbName).collection("products");
-
-        p1 = await collection.findOne({ _id: new ObjectId(ids[0]) });
-        if (!p1) {
-            res.status(404).send({ err: "Prodotto 1 non trovato" });
-            return;
-        }
-
-        p2 = await collection.findOne({ _id: new ObjectId(ids[1]) });
-        if (!p2) {
-            res.status(404).send({ err: "Prodotto 2 non trovato" });
-            return;
-        }
-    } catch (err: any) {
-        console.error(err);
-        res.status(500).send({ err: "Errore durante l'estrazione dei prodotti: " + err.message });
-        return;
-    } finally {
-        await mongoClient.close();
-    }
-
-    const aiService = new AiService();
-    aiService.compareProducts(p1, p2).then(async (compareResponse) => {
-        res.send(compareResponse);
-
-        // Salva storico in background (non blocca la risposta)
-        const userId = (req as any).user.userId;
-        const hClient = new MongoClient(connectionString);
-        try {
-            await hClient.connect();
-            await hClient.db(dbName).collection("comparisons").insertOne({
-                userId,
-                compareResponse, 
-                createdAt: new Date(),
-            });
-        } catch (e: any) {
-            console.error("Errore salvataggio storico:", e.message);
-        } finally {
-            await hClient.close();
-        }
-    }).catch((err: any) => {
-        console.error(err);
-        res.status(500).send({ err: "Errore durante l'analisi AI: " + err.message });
-    });
-});
 
 // GET /api/history
 app.get("/api/history", async function (req, res, next) {
@@ -494,6 +443,64 @@ app.delete("/api/history/:id", async function (req, res, next) {
     });
     cmd.catch(function (err: any) { res.status(500).send({ err: "Errore eliminazione: " + err }); });
     cmd.finally(function () { client.close(); });
+});
+
+
+// -----------------------------------------------------------------
+// CONFRONTO (cuore di Versus)
+// -----------------------------------------------------------------
+app.post("/api/compare", async function (req, res, next) {
+    const json: any = req.body;
+    const ids: string[] = json.ids;
+
+    // ── Recupero prodotti da MongoDB ─────────────────────────
+    let p1: any, p2: any;
+    const mongoClient = new MongoClient(connectionString);
+    try {
+        await mongoClient.connect();
+        const collection = mongoClient.db(dbName).collection("products");
+
+        p1 = await collection.findOne({ _id: new ObjectId(ids[0]) });
+        if (!p1) {
+            res.status(404).send({ err: "Prodotto 1 non trovato" });
+            return;
+        }
+
+        p2 = await collection.findOne({ _id: new ObjectId(ids[1]) });
+        if (!p2) {
+            res.status(404).send({ err: "Prodotto 2 non trovato" });
+            return;
+        }
+    } catch (err: any) {
+        console.error(err);
+        res.status(500).send({ err: "Errore durante l'estrazione dei prodotti: " + err.message });
+        return;
+    } finally {
+        await mongoClient.close();
+    }
+
+    aiService.compareProducts(p1, p2).then(async (compareResponse) => {
+        res.send(compareResponse);
+
+        // Salva storico in background (non blocca la risposta)
+        const userId = (req as any).user.userId;
+        const hClient = new MongoClient(connectionString);
+        try {
+            await hClient.connect();
+            await hClient.db(dbName).collection("comparisons").insertOne({
+                userId,
+                compareResponse,
+                createdAt: new Date(),
+            });
+        } catch (e: any) {
+            console.error("Errore salvataggio storico:", e.message);
+        } finally {
+            await hClient.close();
+        }
+    }).catch((err: any) => {
+        console.error(err);
+        res.status(500).send({ err: "Errore durante l'analisi AI: " + err.message });
+    });
 });
 
 //F. default - risorsa non trovata

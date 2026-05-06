@@ -11,6 +11,7 @@ export type TechCategory =
 export interface PriceHistory {
     price: number;
     date: string;
+    source: string;
 }
 
 // Specs per categoria - campo libero ma tipizzato
@@ -100,9 +101,11 @@ export interface Product {
     brand: string;
     category: TechCategory;
     price: number;
+    lastUpdated: string;
     images: string[];
     priceHistory: PriceHistory[];
     specs: ProductSpecs;
+    searchQuery: string;
 }
 
 
@@ -121,4 +124,9 @@ export interface GeminiAnalysis {
 export interface CompareResponse {
     products: [Product, Product];
     geminiAnalysis: GeminiAnalysis;
+}
+
+export interface PriceRefreshResponse {
+    price: number;
+    source: string;
 }
