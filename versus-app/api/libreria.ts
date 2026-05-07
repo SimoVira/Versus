@@ -1,10 +1,9 @@
 "use strict";
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { AuthService } from "./auth-service";
 import { router } from "expo-router";
 
-const _URL = process.env.EXPO_PUBLIC_LOCAL_URL ?? ""  // IP portatile dove si trova il server (se client e server sulla stessa rete) | indirizzo ngrok pubblico per connettersi al server locale
+const _URL = process.env.EXPO_PUBLIC_PUBLIC_URL ?? ""  // IP portatile dove si trova il server (se client e server sulla stessa rete) oppure URL pubblico del server
 export async function inviaRichiesta(method: any, url: any = "", params: any = {}) {
     method = method.toUpperCase()
     url = "/api" + url;
