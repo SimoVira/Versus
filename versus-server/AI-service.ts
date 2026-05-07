@@ -24,9 +24,7 @@ export interface PriceRefreshResult {
 }
 
 export class AiService {
-    private readonly vertexConfig = JSON.parse(
-        fs.readFileSync(process.env.GOOGLE_SERVICE_ACCOUNT_PATH!, "utf-8")
-    );
+    private readonly vertexConfig = JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT!);
 
     private readonly vertexAI = new VertexAI({
         project: this.vertexConfig.project_id,
