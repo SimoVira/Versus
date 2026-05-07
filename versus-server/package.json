@@ -4,6 +4,7 @@
   "description": "Backend API per Versus - piattaforma di confronto prodotti",
   "main": "server.ts",
   "scripts": {
+    "build": "tsc",
     "start": "nodemon server.ts"
   },
   "keywords": [

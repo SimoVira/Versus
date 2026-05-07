@@ -13,7 +13,7 @@ import { AiService } from "./AI-service";
 const app: express.Express = express();
 dotenv.config({ path: ".env" });
 
-const connectionString = process.env.connectionStringLocal!;
+const connectionString = process.env.connectionStringAtlas!;
 const dbName = process.env.dbName!;
 const JWT_KEY = process.env.JWT_KEY!;
 const PORT = parseInt(process.env.PORT!);

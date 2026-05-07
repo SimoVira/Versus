@@ -18,7 +18,7 @@ export interface CompareResponse {
     geminiAnalysis: GeminiAnalysis;
 }
 
-export interface PriceRefreshResponse {
+export interface PriceRefreshResult {
     price: number | null;
     source: string | null;
 }
@@ -121,7 +121,7 @@ assicurati che tutte le virgolette interne siano scappate correttamente.
 
 
 
-    async refreshProductPrice(searchQuery: string): Promise<PriceRefreshResponse> {
+    async refreshProductPrice(searchQuery: string): Promise<PriceRefreshResult> {
 
         const prompt = `
 Cerca il prezzo attuale di "${searchQuery}" su Google Shopping o siti e-commerce italiani
@@ -164,12 +164,12 @@ Se non trovi un prezzo affidabile rispondi:
                 price = Number.isFinite(numericPrice) ? numericPrice : null;
             }
 
-            const priceRefreshResponse: PriceRefreshResponse = {
+            const priceRefreshResult: PriceRefreshResult = {
                 price,
                 source: parsed.source ?? null
             };
 
-            return priceRefreshResponse;
+            return priceRefreshResult;
         } catch (error: any) {
             console.error("Errore Vertex AI SDK:", error);
             throw new Error(`Errore durante l'aggiornamento prezzo AI: ${error.message}`);
