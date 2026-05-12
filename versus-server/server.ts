@@ -251,6 +251,12 @@ app.patch("/api/products/:id/refresh-price", async function (req, res, next) {
         // ── Chiamata Gemini con Google Search Grounding ──
         const priceRefreshResult = await aiService.refreshProductPrice(product.searchQuery);
 
+        if(priceRefreshResult.price == null) {
+            res.status(200).send({ price: product.price, source: "prezzo precedente, aggiornamento fallito" });
+            client.close();
+            return;
+        }
+
         // ── Aggiornamento MongoDB ──
         const now = new Date();
         const newPrice = {

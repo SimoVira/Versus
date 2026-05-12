@@ -154,9 +154,9 @@ Se non trovi un prezzo affidabile rispondi:
             const parsed = JSON.parse(jsonMatch[0]);
             let price: number | null = null;
 
-            if (typeof parsed.price === "number" && Number.isFinite(parsed.price)) {
+            if (typeof parsed.price == "number" && Number.isFinite(parsed.price)) {
                 price = parsed.price;
-            } else if (typeof parsed.price === "string") {
+            } else if (typeof parsed.price == "string") {
                 const normalized = parsed.price.replace(/[^\d,.]/g, "").replace(",", ".");
                 const numericPrice = Number(normalized);
                 price = Number.isFinite(numericPrice) ? numericPrice : null;

@@ -9,7 +9,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../theme";
 import { ProductService } from "../../api/product-service";
 import { FavoritesService } from "../../api/favorites-service";
-import { Product } from "../../types/Product";
+import { Product, PriceRefreshResponse } from "../../types/Product";
 
 const { width } = Dimensions.get("window");
 
@@ -61,11 +61,11 @@ export default function ProductDetail() {
         setRefreshing(true);
         setRefreshResult(null);
         productService.refreshPrice(product._id)
-            .then(function (data) {
+            .then(function (priceRefreshResponse: PriceRefreshResponse) {
                 setProduct(function (prev) {
-                    return prev ? { ...prev, price: data.price } : prev;
+                    return prev ? { ...prev, price: priceRefreshResponse.price } : prev;
                 });
-                setRefreshResult({ ok: true, text: `€ ${data.price.toFixed(2)} · ${data.source}` });
+                setRefreshResult({ ok: true, text: `€ ${priceRefreshResponse.price.toFixed(2)} · ${priceRefreshResponse.source}` });
             })
             .catch(function (err) {
                 setRefreshResult({ ok: false, text: err.message ?? "Errore di rete" });
