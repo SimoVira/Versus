@@ -19,8 +19,10 @@ const CATEGORY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
     monitor: "desktop-outline",
     cpu: "hardware-chip-outline",
     gpu: "film-outline",
-    cuffie: "headset-outline",
+    headphones: "headset-outline",
     smartwatch: "watch-outline",
+    console: "game-controller-outline",
+    router: "wifi-outline",
 };
 
 export default function Home() {

@@ -5,8 +5,10 @@ export type TechCategory =
     | "monitor"
     | "cpu"
     | "gpu"
-    | "cuffie"
-    | "smartwatch";
+    | "headphones"
+    | "smartwatch"
+    | "console"
+    | "router";
 
 export interface PriceHistory {
     price: number;
@@ -67,7 +69,7 @@ export interface GpuSpecs {
     tdp: string;
 }
 
-export interface CuffieSpecs {
+export interface HeadphonesSpecs {
     tipo: string;           // over-ear, in-ear, on-ear
     connessione: string;    // bluetooth, jack, usb-c
     autonomia: string;
@@ -82,6 +84,22 @@ export interface SmartwatchSpecs {
     waterResistance: string;
 }
 
+export interface ConsoleSpecs {
+    storage: string;
+    risoluzione: string;
+    ottico: string;
+    online: string;
+    retrocompatibilita: string;
+}
+
+export interface RouterSpecs {
+    standard: string;
+    bandeLarghezza: string;
+    porte: string;
+    copertura: string;
+    mesh: boolean;
+}
+
 // Unione di tutte le specs possibili
 export type ProductSpecs =
     | SmartphoneSpecs
@@ -90,8 +108,10 @@ export type ProductSpecs =
     | MonitorSpecs
     | CpuSpecs
     | GpuSpecs
-    | CuffieSpecs
+    | HeadphonesSpecs
     | SmartwatchSpecs
+    | ConsoleSpecs
+    | RouterSpecs
     | Record<string, any>; // fallback per categorie future
 
 // Modello principale - rispecchia il documento MongoDB
@@ -107,7 +127,6 @@ export interface Product {
     specs: ProductSpecs;
     searchQuery: string;
 }
-
 
 export interface GeminiAnalysis {
     score1: number;
