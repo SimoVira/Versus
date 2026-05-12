@@ -7,6 +7,7 @@ import queryStringParser from "./queryStringParser";
 import cors from "cors";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import cron from "node-cron";
 import { AiService } from "./AI-service";
 
 //B. configurazioni
@@ -501,6 +502,66 @@ app.post("/api/compare", async function (req, res, next) {
         console.error(err);
         res.status(500).send({ err: "Errore durante l'analisi AI: " + err.message });
     });
+});
+
+// -----------------------------------------------------------------
+// CRON JOB — aggiornamento prezzi notturno (ogni notte alle 03:00, 0 3 * * *)
+// -----------------------------------------------------------------
+cron.schedule("0 3 * * *", function () {
+    console.log("[CRON] Avvio aggiornamento prezzi:", new Date().toISOString());
+
+    const client = new MongoClient(connectionString);
+
+    const job = client.connect()
+        .then(function () {
+            return client.db(dbName).collection("products").find({}).toArray();
+        })
+        .then(async function (products) {
+            console.log(`[CRON] ${products.length} prodotti da aggiornare`);
+            let updated = 0;
+            let failed = 0;
+
+            for (const product of products) {
+                try {
+                    const result = await aiService.refreshProductPrice(product.searchQuery);
+
+                    if (result.price !== null) {
+                        const now = new Date();
+                        const historyEntry = {
+                            price: result.price,
+                            date: now.toISOString().split("T")[0],
+                            source: result.source ?? "cron-gemini",
+                        };
+
+                        await client.db(dbName).collection("products").updateOne(
+                            { _id: product._id },
+                            {
+                                $set: { price: result.price, lastUpdate: now },
+                                $push: { priceHistory: historyEntry } as any,
+                            }
+                        );
+                        updated++;
+                        console.log(`[CRON] ✓ ${product.name}: €${result.price} (${result.source})`);
+                    } else {
+                        failed++;
+                        console.log(`[CRON] ✗ ${product.name}: prezzo non trovato`);
+                    }
+                } catch (err: any) {
+                    failed++;
+                    console.error(`[CRON] ✗ ${product.name}: ${err.message}`);
+                }
+
+                // Delay tra richieste
+                await new Promise(function (resolve) { setTimeout(resolve, 3000); });
+            }
+
+            console.log(`[CRON] Completato — aggiornati: ${updated}, falliti: ${failed}`);
+        });
+
+    job.catch(function (err: any) {
+        console.error("[CRON] Errore critico:", err.message);
+    });
+    job.finally(function () { client.close(); });
 });
 
 //F. default - risorsa non trovata

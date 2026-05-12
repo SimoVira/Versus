@@ -132,7 +132,7 @@ Se non trovi un prezzo affidabile rispondi:
 
         try {
             const generativeModel = this.vertexAI.getGenerativeModel({
-                model: "gemini-2.5-flash",
+                model: "gemini-2.5-flash-lite",
                 tools: [{ googleSearch: {} } as any]
             });
 
