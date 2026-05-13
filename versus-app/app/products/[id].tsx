@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import {
     View, Text, StyleSheet,
-    ActivityIndicator, TouchableOpacity, FlatList,
+    ActivityIndicator, TouchableOpacity, Image,
     Dimensions, Animated, StatusBar
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -25,7 +25,6 @@ export default function ProductDetail() {
     const [product, setProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [currentImage, setCurrentImage] = useState(0);
     const [isFavorite, setIsFavorite] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [refreshResult, setRefreshResult] = useState<{ ok: boolean; text: string } | null>(null);
@@ -115,36 +114,11 @@ export default function ProductDetail() {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={s.scroll}
             >
-                {product.images && product.images.length > 0 && (
+                {product.imageUrl && (
                     <View style={s.imageContainer}>
-                        <FlatList
-                            data={product.images}
-                            horizontal
-                            pagingEnabled
-                            showsHorizontalScrollIndicator={false}
-                            onMomentumScrollEnd={function (e) {
-                                const index = Math.round(e.nativeEvent.contentOffset.x / (width - 40));
-                                setCurrentImage(index);
-                            }}
-                            renderItem={function ({ item }) {
-                                return (
-                                    <View style={s.imageWrapper}>
-                                        <Text style={s.imagePlaceholder}>📷</Text>
-                                        {/* Sostituisci con <Image source={{ uri: item }} style={s.image} resizeMode="contain" /> */}
-                                    </View>
-                                );
-                            }}
-                            keyExtractor={function (_, i) { return String(i); }}
-                        />
-                        {product.images.length > 1 && (
-                            <View style={s.dots}>
-                                {product.images.map(function (_, i) {
-                                    return (
-                                        <View key={i} style={[s.dot, i === currentImage && s.dotActive]} />
-                                    );
-                                })}
-                            </View>
-                        )}
+                        <View style={s.imageWrapper}>
+                            <Image source={{ uri: product.imageUrl }} style={s.image} resizeMode="contain" />
+                        </View>
                     </View>
                 )}
 
@@ -287,6 +261,7 @@ function makeStyles(C: ReturnType<typeof useTheme>["colors"]) {
             borderWidth: 1, borderColor: C.border,
             justifyContent: "center", alignItems: "center",
         },
+        image: { width: "100%", height: "100%" },
         imagePlaceholder: { fontSize: 64, opacity: 0.3 },
         dots: { flexDirection: "row", justifyContent: "center", marginTop: 10, gap: 6 },
         dot: { width: 6, height: 6, borderRadius: 3, backgroundColor: C.border },

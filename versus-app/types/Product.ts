@@ -122,7 +122,7 @@ export interface Product {
     category: TechCategory;
     price: number;
     lastUpdated: string;
-    images: string[];
+    imageUrl: string;
     priceHistory: PriceHistory[];
     specs: ProductSpecs;
     searchQuery: string;

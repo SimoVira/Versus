@@ -1,4 +1,3 @@
-import fs from 'fs';
 import { VertexAI } from '@google-cloud/vertexai';
 
 //interfaces
