@@ -13,7 +13,7 @@ import { useTheme } from "../theme";
 export default function Search() {
     const router = useRouter();
     const { colors, isDark } = useTheme();
-    const { category } = useLocalSearchParams<{ category: string }>();
+    const { category, preselectId } = useLocalSearchParams<{ category: string; preselectId?: string }>();
     const productService = new ProductService();
     const favoritesService = new FavoritesService();
 
@@ -35,13 +35,17 @@ export default function Search() {
         try {
             const data = await productService.getProducts(category, search);
             setProducts(data);
+
+            if (preselectId && selected.length == 0) {
+                const preselectedProduct = data.find(function (p) { return p._id == preselectId; });
+                if (preselectedProduct) setSelected([preselectedProduct]);
+            }
         } catch (err: any) {
             setError(err.message);
         } finally {
             setLoading(false);
         }
     }
-
     async function loadFavorites() {
         try {
             const data = await favoritesService.getFavorites();
@@ -107,15 +111,15 @@ export default function Search() {
 
             {/* ── Header ───────────────────────────────────── */}
             <View style={s.header}>
-                <TouchableOpacity onPress={() => router.back()} style={s.iconBtn}>
+                <TouchableOpacity onPress={() => router.navigate("/tabs/")} style={s.iconBtn}>
                     <Ionicons name="arrow-back" size={22} color={colors.textSub} />
                 </TouchableOpacity>
                 <View style={s.headerText}>
                     <Text style={s.title}>{category}</Text>
                     <Text style={s.hint}>
-                        {selected.length === 0 && "Seleziona due prodotti da confrontare"}
-                        {selected.length === 1 && "Seleziona ancora un prodotto"}
-                        {selected.length === 2 && "Pronti per il confronto!"}
+                        {selected.length == 0 && "Seleziona due prodotti da confrontare"}
+                        {selected.length == 1 && "Seleziona ancora un prodotto"}
+                        {selected.length == 2 && "Pronti per il confronto!"}
                     </Text>
                 </View>
             </View>

@@ -20,7 +20,6 @@ export default function Login() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
 
-    // Shake animation per errore
     const shakeAnim = useRef(new Animated.Value(0)).current;
 
     function shake() {
@@ -60,18 +59,15 @@ export default function Login() {
         >
             <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
 
-            {/* Logo / Brand */}
             <View style={s.brandArea}>
                 <Text style={s.brandName}>versus</Text>
                 <Text style={s.brandSub}>Confronta. Scegli. Meglio.</Text>
             </View>
 
-            {/* Form */}
             <Animated.View style={[s.form, { transform: [{ translateX: shakeAnim }] }]}>
 
                 <Text style={s.formTitle}>Accedi</Text>
 
-                {/* Email */}
                 <View style={s.inputWrapper}>
                     <Text style={s.inputLabel}>EMAIL</Text>
                     <TextInput
@@ -86,7 +82,6 @@ export default function Login() {
                     />
                 </View>
 
-                {/* Password */}
                 <View style={s.inputWrapper}>
                     <Text style={s.inputLabel}>PASSWORD</Text>
                     <TextInput
@@ -99,12 +94,10 @@ export default function Login() {
                     />
                 </View>
 
-                {/* Errore */}
                 {error !== "" && (
                     <Text style={s.errorText}>{error}</Text>
                 )}
 
-                {/* Bottone login */}
                 <TouchableOpacity
                     style={[s.loginBtn, loading && s.loginBtnDisabled]}
                     onPress={handleLogin}
@@ -117,14 +110,12 @@ export default function Login() {
                     }
                 </TouchableOpacity>
 
-                {/* Divider */}
                 <View style={s.divider}>
                     <View style={s.dividerLine} />
                     <Text style={s.dividerText}>non hai un account?</Text>
                     <View style={s.dividerLine} />
                 </View>
 
-                {/* Vai a registrazione */}
                 <TouchableOpacity
                     style={s.registerBtn}
                     onPress={() => router.push("/register")}

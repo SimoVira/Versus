@@ -118,7 +118,6 @@ export default function History() {
                             }}
                             activeOpacity={0.8}
                         >
-                            {/* Data + categoria */}
                             <View style={s.cardHeader}>
                                 <View style={s.categoryTag}>
                                     <Text style={s.categoryTagText}>{p1.category}</Text>
@@ -126,7 +125,6 @@ export default function History() {
                                 <Text style={s.dateText}>{formatDate(item.createdAt)}</Text>
                             </View>
 
-                            {/* Prodotti */}
                             <View style={s.productsRow}>
                                 <View style={[s.productBox, s.productBoxWinner]}>
                                     <View style={s.winnerBadge}>
@@ -154,7 +152,6 @@ export default function History() {
                                 </View>
                             </View>
 
-                            {/* Verdict */}
                             <View style={s.verdictBox}>
                                 <Text style={s.verdictIcon}>✦</Text>
                                 <Text style={s.verdictText} numberOfLines={2}>
@@ -162,7 +159,6 @@ export default function History() {
                                 </Text>
                             </View>
 
-                            {/* Footer */}
                             <TouchableOpacity
                                 style={s.deleteBtn}
                                 onPress={function (e) {

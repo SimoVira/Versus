@@ -63,7 +63,6 @@ export default function Register() {
         }
     }
 
-    // Indicatore forza password
     function passwordStrength(): { label: string; color: string; width: string } {
         if (password.length === 0) return { label: "", color: "transparent", width: "0%" };
         if (password.length < 6) return { label: "Debole", color: colors.red, width: "30%" };
@@ -85,7 +84,6 @@ export default function Register() {
                 keyboardShouldPersistTaps="handled"
                 showsVerticalScrollIndicator={false}
             >
-                {/* Header */}
                 <TouchableOpacity onPress={() => router.back()} style={s.backRow}>
                     <Ionicons name="arrow-back" size={22} color={colors.textSub} />
                     <Text style={s.backLabel}>Accedi</Text>
@@ -96,12 +94,10 @@ export default function Register() {
                     <Text style={s.brandSub}>Crea il tuo account</Text>
                 </View>
 
-                {/* Form */}
                 <Animated.View style={[s.form, { transform: [{ translateX: shakeAnim }] }]}>
 
                     <Text style={s.formTitle}>Registrati</Text>
 
-                    {/* Nome */}
                     <View style={s.inputWrapper}>
                         <Text style={s.inputLabel}>NOME</Text>
                         <TextInput
@@ -114,7 +110,6 @@ export default function Register() {
                         />
                     </View>
 
-                    {/* Email */}
                     <View style={s.inputWrapper}>
                         <Text style={s.inputLabel}>EMAIL</Text>
                         <TextInput
@@ -129,7 +124,6 @@ export default function Register() {
                         />
                     </View>
 
-                    {/* Password */}
                     <View style={s.inputWrapper}>
                         <Text style={s.inputLabel}>PASSWORD</Text>
                         <TextInput
@@ -140,7 +134,6 @@ export default function Register() {
                             onChangeText={setPassword}
                             secureTextEntry
                         />
-                        {/* Indicatore forza */}
                         {password.length > 0 && (
                             <View style={s.strengthRow}>
                                 <View style={s.strengthBar}>
@@ -156,7 +149,6 @@ export default function Register() {
                         )}
                     </View>
 
-                    {/* Conferma password */}
                     <View style={s.inputWrapper}>
                         <Text style={s.inputLabel}>CONFERMA PASSWORD</Text>
                         <TextInput
@@ -172,12 +164,10 @@ export default function Register() {
                         />
                     </View>
 
-                    {/* Errore */}
                     {error !== "" && (
                         <Text style={s.errorText}>{error}</Text>
                     )}
 
-                    {/* Bottone registrazione */}
                     <TouchableOpacity
                         style={[s.registerBtn, loading && s.registerBtnDisabled]}
                         onPress={handleRegister}
@@ -190,7 +180,6 @@ export default function Register() {
                         }
                     </TouchableOpacity>
 
-                    {/* Già registrato */}
                     <TouchableOpacity
                         style={s.loginLink}
                         onPress={() => router.back()}

@@ -111,7 +111,7 @@ export default function Compare() {
             <StatusBar barStyle={isDark ? "light-content" : "dark-content"} />
             <Ionicons name="alert-circle-outline" size={48} color={colors.red} />
             <Text style={s.errorText}>{error || "Qualcosa è andato storto."}</Text>
-            <TouchableOpacity onPress={() => router.back()} style={s.backBtnError}>
+            <TouchableOpacity onPress={() => router.navigate("/tabs/")} style={s.backBtnError}>
                 <Text style={s.backBtnErrorText}>Torna indietro</Text>
             </TouchableOpacity>
         </View>

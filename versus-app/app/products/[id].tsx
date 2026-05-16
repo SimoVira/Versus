@@ -210,7 +210,7 @@ export default function ProductDetail() {
                     onPress={function () {
                         router.push({
                             pathname: "/search",
-                            params: { category: product.category }
+                            params: { category: product.category, preselectId: product._id }
                         });
                     }}
                     activeOpacity={0.85}

@@ -1,5 +1,3 @@
-// Uso: const { colors, isDark } = useTheme();
-
 import { useColorScheme } from "react-native";
 
 export const dark = {
@@ -35,7 +33,7 @@ export const light = {
     border: "#E0E0EC",
     borderLight: "#EBEBF5",
 
-    lime: "#5A9400",      // lime più scuro su sfondo chiaro per leggibilità
+    lime: "#5A9400",
     limeDim: "#4A7A00",
     limeFaint: "#EEF8D8",
 
