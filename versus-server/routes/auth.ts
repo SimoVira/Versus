@@ -140,22 +140,26 @@ router.get("/google/status", async function (req, res) {
     if (!state) { res.status(400).send("state mancante"); return; }
 
     const client = new MongoClient(connectionString);
-    await client.connect().catch(function () {
-        res.status(503).send("Errore connessione db"); return;
-    });
-    const collection = client.db(dbName).collection("oauth_sessions");
-    const cmd = collection.findOne({ state });
-    cmd.then(async function (session) {
-        if (!session) { res.status(404).send({ status: "not_found" }); return; }
+    try {
+        await client.connect();
+        const collection = client.db(dbName).collection("oauth_sessions");
+        const session = await collection.findOne({ state });
+
+        if (!session) {
+            res.status(404).send({ status: "not_found" });
+            return;
+        }
         if (session.status == "done") {
             await collection.deleteOne({ state });
             res.status(200).send({ status: "done", token: session.token, user: session.user });
         } else {
             res.status(200).send({ status: "pending" });
         }
-    });
-    cmd.catch(function (err: any) { res.status(500).send({ status: "error", err: String(err) }); });
-    cmd.finally(function () { client.close(); });
+    } catch (err: any) {
+        res.status(500).send({ status: "error", err: String(err) });
+    } finally {
+        await client.close();
+    }
 });
 
 export default router;
