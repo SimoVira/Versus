@@ -1,18 +1,19 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as WebBrowser from "expo-web-browser";
 import { inviaRichiesta } from "./libreria";
 
 const TOKEN_KEY = "versus_token"; //NOME CHIAVE per salvare il token JWT su AsyncStorage
-const USER_KEY  = "versus_user";
+const USER_KEY = "versus_user";
 
 export interface User {
-    id:    string;
+    id: string;
     email: string;
-    name:  string;
+    name: string;
 }
 
 export interface AuthResponse {
     token: string;
-    user:  User;
+    user: User;
 }
 
 export class AuthService {
@@ -27,7 +28,6 @@ export class AuthService {
         throw new Error(res?.data?.err || "Errore durante la registrazione");
     }
 
-    // ── Login ────────────────────────────────────────────────
     public async login(email: string, password: string): Promise<AuthResponse> {
         const res = await inviaRichiesta("POST", "/login", { email, password });
         if (res?.status == 200) {
@@ -37,7 +37,27 @@ export class AuthService {
         throw new Error(res?.data?.err || "Credenziali non valide");
     }
 
-    // ── Logout ───────────────────────────────────────────────
+    public async loginWithGoogle(): Promise<AuthResponse> {
+        const state = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
+        const backendUrl = process.env.EXPO_PUBLIC_PUBLIC_URL; 
+
+        await WebBrowser.openBrowserAsync(`${backendUrl}/api/google/start?state=${state}`);
+
+        // Browser chiuso → polling status (max 10 tentativi, 500ms tra l'uno e l'altro)
+        for (let i = 0; i < 10; i++) {
+            await new Promise(r => setTimeout(r, 500));
+            try {
+                const res = await fetch(`${backendUrl}/api/google/status?state=${state}`);
+                const data = await res.json();
+                if (data.status === "done") {
+                    await this.saveSession(data.token, data.user);
+                    return { token: data.token, user: data.user };
+                }
+            } catch { /* riprova */ }
+        }
+        throw new Error("Autenticazione non completata. Riprova.");
+    }
+
     public static async logout(): Promise<void> {
         await AsyncStorage.multiRemove([TOKEN_KEY, USER_KEY]);
     }

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import {
     View, Text, FlatList, TouchableOpacity,
     StyleSheet, ActivityIndicator, Alert,
-    StatusBar, useColorScheme
+    StatusBar
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";

@@ -7,6 +7,7 @@ import {
 import { useRouter } from "expo-router";
 import { AuthService } from "../api/auth-service";
 import { useTheme } from "../theme";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function Login() {
     const router = useRouter();
@@ -43,6 +44,20 @@ export default function Login() {
 
         try {
             await authService.login(email.trim().toLowerCase(), password);
+            router.replace("/tabs/");
+        } catch (err: any) {
+            setError(err.message);
+            shake();
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    async function handleGoogleLogin() {
+        setLoading(true);
+        setError("");
+        try {
+            await authService.loginWithGoogle();
             router.replace("/tabs/");
         } catch (err: any) {
             setError(err.message);
@@ -108,6 +123,22 @@ export default function Login() {
                         ? <ActivityIndicator color={colors.textInverse} />
                         : <Text style={s.loginBtnText}>Entra</Text>
                     }
+                </TouchableOpacity>
+
+                <View style={s.divider}>
+                    <View style={s.dividerLine} />
+                    <Text style={s.dividerText}>oppure</Text>
+                    <View style={s.dividerLine} />
+                </View>
+
+                <TouchableOpacity
+                    style={[s.googleBtn, loading && s.loginBtnDisabled]}
+                    onPress={handleGoogleLogin}
+                    disabled={loading}
+                    activeOpacity={0.85}
+                >
+                    <Ionicons name="logo-google" size={18} color={colors.textPrimary} />
+                    <Text style={s.googleBtnText}>Accedi con Google</Text>
                 </TouchableOpacity>
 
                 <View style={s.divider}>
@@ -205,6 +236,23 @@ function makeStyles(C: ReturnType<typeof useTheme>["colors"]) {
             fontWeight: "800",
             fontSize: 16,
             letterSpacing: 0.5,
+        },
+
+        googleBtn: {
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 10,
+            borderWidth: 1,
+            borderColor: C.border,
+            borderRadius: 14,
+            paddingVertical: 14,
+            backgroundColor: C.card,
+        },
+        googleBtnText: {
+            color: C.textPrimary,
+            fontWeight: "600",
+            fontSize: 15,
         },
 
         divider: {
