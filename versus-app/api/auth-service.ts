@@ -47,10 +47,9 @@ export class AuthService {
             await new Promise(r => setTimeout(r, 500));
             try {
                 const res: any = await inviaRichiesta("GET", `/google/status`, { state });
-                const data = await res.json();
-                if (data.status === "done") {
-                    await this.saveSession(data.token, data.user);
-                    return { token: data.token, user: data.user };
+                if (res.data?.status == "done") {
+                    await this.saveSession(res.data.token, res.data.user);
+                    return { token: res.data.token, user: res.data.user };
                 }
             } catch { /* riprova */ }
         }

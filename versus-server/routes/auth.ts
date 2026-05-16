@@ -45,6 +45,9 @@ router.post("/login", async function (req, res) {
     cmd.finally(function () { client.close(); });
 });
 
+
+
+
 // GET /api/google/start?state=xxx
 router.get("/google/start", async function (req, res) {
     const state = req.query.state as string;
@@ -72,6 +75,8 @@ router.get("/google/start", async function (req, res) {
     cmd.catch(function (err: any) { res.status(500).send("Errore: " + err); });
     cmd.finally(function () { client.close(); });
 });
+
+
 
 // GET /api/google/callback
 router.get("/google/callback", async function (req, res) {
@@ -106,9 +111,9 @@ router.get("/google/callback", async function (req, res) {
         const users = client.db(dbName).collection("users");
         let user = await users.findOne({ $or: [{ email }, { googleId }] });
         if (!user) {
-            const result = await users.insertOne({ name: name ?? email, email, googleId, createdAt: new Date() });
+            const result = await users.insertOne({ name: name ?? email, email, favorites: [], createdAt: new Date(), googleId });
             user = { _id: result.insertedId, name: name ?? email, email };
-        } else if (!user.googleId) {
+        } else if (!user.googleId) { // Se l'utente esiste ma non ha googleId (aveva un account senza Google), aggiorna il record
             await users.updateOne({ _id: user._id }, { $set: { googleId } });
         }
 
@@ -133,6 +138,8 @@ router.get("/google/callback", async function (req, res) {
         res.status(500).send("Errore: " + err.message);
     }
 });
+
+
 
 // GET /api/google/status?state=xxx
 router.get("/google/status", async function (req, res) {
