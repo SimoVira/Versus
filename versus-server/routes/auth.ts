@@ -45,48 +45,41 @@ router.post("/login", async function (req, res) {
     cmd.finally(function () { client.close(); });
 });
 
-// Mappa in memoria per le sessioni OAuth temporanee
-const oauthSessions = new Map<string, {
-    status: "pending" | "done";
-    token?: string;
-    user?: any;
-    createdAt: Date;
-}>();
-
-// Pulisce sessioni vecchie ogni minuto
-setInterval(function () {
-    const limit = new Date(Date.now() - 5 * 60 * 1000);
-    oauthSessions.forEach(function (val, key) {
-        if (val.createdAt < limit) oauthSessions.delete(key);
-    });
-}, 60_000);
-
 // GET /api/google/start?state=xxx
-router.get("/google/start", function (req, res) {
+router.get("/google/start", async function (req, res) {
     const state = req.query.state as string;
     if (!state) { res.status(400).send("state mancante"); return; }
 
-    oauthSessions.set(state, { status: "pending", createdAt: new Date() });
-
-    const params = new URLSearchParams({
-        client_id: process.env.GOOGLE_WEB_CLIENT_ID!,
-        redirect_uri: process.env.GOOGLE_REDIRECT_URI!,
-        response_type: "code",
-        scope: "openid email profile",
-        state,
+    const client = new MongoClient(connectionString);
+    await client.connect().catch(function () {
+        res.status(503).send("Errore connessione db"); return;
     });
-    res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);
+    const cmd = client.db(dbName).collection("oauth_sessions").insertOne({
+        state,
+        status: "pending",
+        createdAt: new Date(),
+    });
+    cmd.then(function () {
+        const params = new URLSearchParams({
+            client_id: process.env.GOOGLE_WEB_CLIENT_ID!,
+            redirect_uri: process.env.GOOGLE_REDIRECT_URI!,
+            response_type: "code",
+            scope: "openid email profile",
+            state,
+        });
+        res.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params}`);
+    });
+    cmd.catch(function (err: any) { res.status(500).send("Errore: " + err); });
+    cmd.finally(function () { client.close(); });
 });
 
-// GET /api/google/callback  ← Google redirige qui
+// GET /api/google/callback
 router.get("/google/callback", async function (req, res) {
     const { code, state } = req.query as { code: string; state: string };
-    if (!code || !state || !oauthSessions.has(state)) {
-        res.status(400).send("Parametri non validi"); return;
-    }
+    if (!code || !state) { res.status(400).send("Parametri mancanti"); return; }
 
     try {
-        // 1. Scambia code → access token
+        // Scambia code → access token
         const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
             method: "POST",
             headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -100,62 +93,69 @@ router.get("/google/callback", async function (req, res) {
         });
         const tokens = await tokenRes.json();
 
-        // 2. Ottieni profilo utente
+        // Ottieni profilo Google
         const userRes = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
             headers: { Authorization: `Bearer ${tokens.access_token}` }
         });
         const googleUser = await userRes.json();
         const { email, name, sub: googleId } = googleUser;
 
-        // 3. Trova o crea utente in MongoDB
+        // Trova o crea utente
         const client = new MongoClient(connectionString);
         await client.connect();
-        const collection = client.db(dbName).collection("users");
-        let user = await collection.findOne({ $or: [{ email }, { googleId }] });
+        const users = client.db(dbName).collection("users");
+        let user = await users.findOne({ $or: [{ email }, { googleId }] });
         if (!user) {
-            const result = await collection.insertOne({ name: name ?? email, email, googleId, createdAt: new Date() });
+            const result = await users.insertOne({ name: name ?? email, email, googleId, createdAt: new Date() });
             user = { _id: result.insertedId, name: name ?? email, email };
         } else if (!user.googleId) {
-            await collection.updateOne({ _id: user._id }, { $set: { googleId } });
+            await users.updateOne({ _id: user._id }, { $set: { googleId } });
         }
-        await client.close();
 
-        // 4. Crea JWT e salva in sessione
+        // Crea JWT e salva su MongoDB
         const token = jwt.sign(
             { userId: user._id.toString(), email: user.email },
             JWT_KEY,
             { expiresIn: TOKEN_EXPIRY }
         );
-        oauthSessions.set(state, {
-            status: "done",
-            token,
-            user: { id: user._id, email: user.email, name: user.name },
-            createdAt: new Date(),
-        });
+        await client.db(dbName).collection("oauth_sessions").updateOne(
+            { state },
+            { $set: { status: "done", token, user: { id: user._id, email: user.email, name: user.name } } }
+        );
+        await client.close();
 
-        // 5. Pagina di successo (si chiude da sola)
         res.send(`<!DOCTYPE html><html><body style="font-family:sans-serif;text-align:center;padding:60px;background:#0a0a0a;color:#fff">
             <h2 style="color:#AAFF00">✓ Accesso effettuato!</h2>
             <p style="color:#888">Puoi chiudere questa finestra e tornare all'app.</p>
             <script>setTimeout(function(){ window.close(); }, 1500);</script>
         </body></html>`);
     } catch (err: any) {
-        oauthSessions.delete(state);
         res.status(500).send("Errore: " + err.message);
     }
 });
 
-// GET /api/google/status?state=xxx  ← app fa polling qui
-router.get("/google/status", function (req, res) {
+// GET /api/google/status?state=xxx
+router.get("/google/status", async function (req, res) {
     const state = req.query.state as string;
-    const session = oauthSessions.get(state);
-    if (!session) { res.status(404).send({ status: "not_found" }); return; }
-    if (session.status === "done") {
-        oauthSessions.delete(state);
-        res.status(200).send({ status: "done", token: session.token, user: session.user });
-    } else {
-        res.status(200).send({ status: "pending" });
-    }
+    if (!state) { res.status(400).send("state mancante"); return; }
+
+    const client = new MongoClient(connectionString);
+    await client.connect().catch(function () {
+        res.status(503).send("Errore connessione db"); return;
+    });
+    const collection = client.db(dbName).collection("oauth_sessions");
+    const cmd = collection.findOne({ state });
+    cmd.then(async function (session) {
+        if (!session) { res.status(404).send({ status: "not_found" }); return; }
+        if (session.status == "done") {
+            await collection.deleteOne({ state });
+            res.status(200).send({ status: "done", token: session.token, user: session.user });
+        } else {
+            res.status(200).send({ status: "pending" });
+        }
+    });
+    cmd.catch(function (err: any) { res.status(500).send({ status: "error", err: String(err) }); });
+    cmd.finally(function () { client.close(); });
 });
 
 export default router;

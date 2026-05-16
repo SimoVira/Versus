@@ -18,7 +18,6 @@ export interface AuthResponse {
 
 export class AuthService {
 
-    // ── Registrazione ────────────────────────────────────────
     public async register(name: string, email: string, password: string): Promise<AuthResponse> {
         const res = await inviaRichiesta("POST", "/register", { name, email, password });
         if (res?.status == 201) {
@@ -39,7 +38,7 @@ export class AuthService {
 
     public async loginWithGoogle(): Promise<AuthResponse> {
         const state = Math.random().toString(36).slice(2) + Math.random().toString(36).slice(2);
-        const backendUrl = process.env.EXPO_PUBLIC_PUBLIC_URL; 
+        const backendUrl = process.env.EXPO_PUBLIC_PUBLIC_URL;
 
         await WebBrowser.openBrowserAsync(`${backendUrl}/api/google/start?state=${state}`);
 
@@ -47,7 +46,7 @@ export class AuthService {
         for (let i = 0; i < 10; i++) {
             await new Promise(r => setTimeout(r, 500));
             try {
-                const res = await fetch(`${backendUrl}/api/google/status?state=${state}`);
+                const res: any = await inviaRichiesta("GET", `/google/status`, { state });
                 const data = await res.json();
                 if (data.status === "done") {
                     await this.saveSession(data.token, data.user);
