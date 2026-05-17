@@ -20,9 +20,12 @@ export class AuthService {
 
     public async register(name: string, email: string, password: string): Promise<AuthResponse> {
         const res = await inviaRichiesta("POST", "/register", { name, email, password });
-        if (res?.status == 201) {
+        if (res?.status == 201 || res?.status == 200) {
             await this.saveSession(res.data.token, res.data.user);
             return res.data;
+        }
+        else if (res?.status == 409) {
+            throw new Error("Email già registrata");
         }
         throw new Error(res?.data?.err || "Errore durante la registrazione");
     }
