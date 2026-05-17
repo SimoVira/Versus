@@ -105,9 +105,9 @@ export default function Favorites() {
                         <Text style={s.emptyText}>
                             Aggiungi prodotti ai preferiti dalla lista categorie
                         </Text>
-                        <TouchableOpacity
+                            <TouchableOpacity
                             style={s.exploreBtn}
-                            onPress={() => router.push("/")}
+                            onPress={() => router.push("/tabs/")}
                             activeOpacity={0.85}
                         >
                             <Text style={s.exploreBtnText}>Esplora categorie</Text>

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "versus-app",
+    "name": "versus",
     "slug": "versus-app",
     "scheme": "versus",
     "version": "1.0.0",
@@ -33,6 +33,12 @@
       "expo-router",
       "expo-asset",
       "expo-web-browser"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "dbe11ec1-9c9e-4c16-a743-f9688ad62ada"
+      }
+    }
   }
 }
