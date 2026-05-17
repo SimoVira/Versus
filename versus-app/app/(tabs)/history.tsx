@@ -95,7 +95,7 @@ export default function History() {
                         </Text>
                         <TouchableOpacity
                             style={s.exploreBtn}
-                            onPress={() => router.push("/tabs/")}
+                            onPress={() => router.push("/home")}
                         >
                             <Text style={s.exploreBtnText}>Inizia a confrontare →</Text>
                         </TouchableOpacity>

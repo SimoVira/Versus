@@ -107,7 +107,7 @@ export default function Favorites() {
                         </Text>
                             <TouchableOpacity
                             style={s.exploreBtn}
-                            onPress={() => router.push("/tabs/")}
+                            onPress={() => router.push("/home")}
                             activeOpacity={0.85}
                         >
                             <Text style={s.exploreBtnText}>Esplora categorie</Text>

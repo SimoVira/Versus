@@ -20,8 +20,8 @@
     "android": {
       "package": "com.simovira.versus",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#000000"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false

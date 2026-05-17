@@ -44,7 +44,7 @@ export default function Login() {
 
         try {
             await authService.login(email.trim().toLowerCase(), password);
-            router.replace("/tabs/");
+            router.replace("/home");
         } catch (err: any) {
             setError(err.message);
             shake();
@@ -58,7 +58,7 @@ export default function Login() {
         setError("");
         try {
             await authService.loginWithGoogle();
-            router.replace("/tabs/");
+            router.replace("/home");
         } catch (err: any) {
             setError(err.message);
             shake();

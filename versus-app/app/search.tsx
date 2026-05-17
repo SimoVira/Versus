@@ -111,7 +111,7 @@ export default function Search() {
 
             {/* ── Header ───────────────────────────────────── */}
             <View style={s.header}>
-                <TouchableOpacity onPress={() => router.navigate("/tabs/")} style={s.iconBtn}>
+                <TouchableOpacity onPress={() => router.navigate("/home")} style={s.iconBtn}>
                     <Ionicons name="arrow-back" size={22} color={colors.textSub} />
                 </TouchableOpacity>
                 <View style={s.headerText}>

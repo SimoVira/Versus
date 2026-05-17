@@ -54,7 +54,7 @@ export default function Register() {
 
         try {
             await authService.register(name.trim(), email.trim().toLowerCase(), password);
-            router.replace("/tabs/");
+            router.replace("/home");
         } catch (err: any) {
             setError(err.message);
             shake();
