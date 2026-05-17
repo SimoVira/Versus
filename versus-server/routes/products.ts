@@ -68,7 +68,7 @@ router.patch("/:id/refresh-price", async function (req, res) {
             { $set: { price: priceRefreshResult.price, lastUpdate: now }, $push: { priceHistory: newPrice } as any }
         );
         cmd2.then(function () {
-            res.status(200).send({ price: priceRefreshResult.price, source: priceRefreshResult.source ?? "gemini-grounding" });
+            res.status(200).send({ price: priceRefreshResult.price, source: priceRefreshResult.source ?? "gemini-grounding", addedPriceHistory: newPrice });
         });
         cmd2.catch(function (err: any) { console.error("Errore aggiornamento MongoDB:", err); });
         cmd2.finally(function () { client.close(); });

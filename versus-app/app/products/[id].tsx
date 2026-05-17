@@ -62,7 +62,9 @@ export default function ProductDetail() {
         productService.refreshPrice(product._id)
             .then(function (priceRefreshResponse: PriceRefreshResponse) {
                 setProduct(function (prev) {
-                    return prev ? { ...prev, price: priceRefreshResponse.price } : prev;
+                    if (!prev) return prev;
+                    prev.priceHistory.push(priceRefreshResponse.addedPriceHistory);
+                    return { ...prev, price: priceRefreshResponse.price };
                 });
                 setRefreshResult({ ok: true, text: `€ ${priceRefreshResponse.price.toFixed(2)} · ${priceRefreshResponse.source}` });
             })
@@ -114,13 +116,6 @@ export default function ProductDetail() {
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={s.scroll}
             >
-                {product.imageUrl && (
-                    <View style={s.imageContainer}>
-                        <View style={s.imageWrapper}>
-                            <Image source={{ uri: product.imageUrl }} style={s.image} resizeMode="contain" />
-                        </View>
-                    </View>
-                )}
 
                 <View style={s.infoCard}>
                     <View style={s.infoRow}>

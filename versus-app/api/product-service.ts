@@ -18,9 +18,9 @@ export class ProductService {
         throw new Error(res?.err || "Prodotto non trovato");
     }
     async refreshPrice(productId: string): Promise<PriceRefreshResponse> {
-    // usa il tuo client HTTP (libreria.js) con PATCH /api/products/:id/refresh-price
-     const res = await inviaRichiesta("PATCH", `/products/${productId}/refresh-price`);
-     if (res?.status != 200) throw new Error(res?.err || "Errore nel refresh del prezzo");
-     return res.data;
+        // usa il tuo client HTTP (libreria.js) con PATCH /api/products/:id/refresh-price
+        const res = await inviaRichiesta("PATCH", `/products/${productId}/refresh-price`);
+        if (res?.status != 200) throw new Error(res?.err || "Errore nel refresh del prezzo");
+        return res.data;
     }
 }

@@ -122,7 +122,6 @@ export interface Product {
     category: TechCategory;
     price: number;
     lastUpdated: string;
-    imageUrl: string;
     priceHistory: PriceHistory[];
     specs: ProductSpecs;
     searchQuery: string;
@@ -148,4 +147,5 @@ export interface CompareResponse {
 export interface PriceRefreshResponse {
     price: number;
     source: string;
+    addedPriceHistory: PriceHistory;
 }
