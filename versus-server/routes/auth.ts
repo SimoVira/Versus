@@ -30,6 +30,7 @@ router.post("/register", async function (req, res) {
                 favorites: [],
                 createdAt: new Date(),
             });
+            client.close();
             const token = jwt.sign(
                 { userId: data.insertedId.toString(), email },
                 JWT_KEY,
@@ -46,6 +47,7 @@ router.post("/register", async function (req, res) {
                 { _id: existingUser._id },
                 { $set: { password: hashedPassword, name: existingUser.name ?? name } }
             );
+            client.close();
             const token = jwt.sign(
                 { userId: existingUser._id.toString(), email },
                 JWT_KEY,
@@ -57,13 +59,11 @@ router.post("/register", async function (req, res) {
 
         // Caso 3: esiste già con password → conflitto
         res.status(409).send({ err: "Email già in uso" });
+        client.close();
     });
 
     cmd.catch(function (err: any) {
         res.status(500).send({ err: "Errore query: " + err });
-    });
-
-    cmd.finally(function () {
         client.close();
     });
 });
