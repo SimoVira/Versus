@@ -1,9 +1,9 @@
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
     View, Text, FlatList, TouchableOpacity,
     StyleSheet, ActivityIndicator, TextInput, StatusBar
 } from "react-native";
-import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { ProductService } from "../api/product-service";
 import { FavoritesService } from "../api/favorites-service";
@@ -22,11 +22,9 @@ export default function Search() {
     const [search, setSearch] = useState<string>("");
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string>("");
-    const [selected, setSelected] = useState<Product[]>([]);
+    const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [favorites, setFavorites] = useState<Set<string>>(new Set());
     const [refreshingId, setRefreshingId] = useState<string | null>(null);
-
-    const listRef = useRef<FlatList>(null);
 
     //quando cambia category, ricarica i prodotti e i preferiti
     useEffect(function () {
@@ -34,31 +32,28 @@ export default function Search() {
         loadFavorites();
     }, [category]);
 
-    // quando cambia il vettore selected, scrolla al primo prodotto selezionato
     useFocusEffect(useCallback(function () {
         const pendingId = selectStore.get();
-        if (!pendingId || products.length === 0) return; // ← solo se vengo da dettaglio
-        const index = products.findIndex(function (p) { return p._id === selected[0]?._id; });
-        if (index > 0) {
-            setTimeout(function () {
-                listRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.3 });
-            }, 300);
+        if (products.length === 0) return;
+
+        //quando si torna da [id] con un prodotto selezionato (salvato in selectStore), aggiungilo alla selezione corrente (se non c'è già)
+        if (pendingId) {
+            selectStore.addSelectedId(pendingId);
+            selectStore.set(null);
         }
-    }, [products, selected]));
+
+        syncSelectedFromStore();
+    }, [products]));
 
     useEffect(function () {
         if (!preselectId || products.length === 0) return;
-        const alreadySelected = selected.find(function (p) { return p._id == preselectId; });
-        if (alreadySelected) return;
-
-        const preselectedProduct = products.find(function (p) { return p._id == preselectId; });
-        if (!preselectedProduct) return;
-
-        setSelected(function (prev) {
-            if (prev.length >= 2) return [prev[0], preselectedProduct];
-            return [...prev, preselectedProduct];
-        });
+        selectStore.addSelectedId(preselectId);
+        syncSelectedFromStore();
     }, [preselectId, products]);
+
+    function syncSelectedFromStore() {
+        setSelectedIds(selectStore.getSelectedIds());
+    }
 
     async function loadProducts() {
         setLoading(true);
@@ -112,21 +107,31 @@ export default function Search() {
     }
 
     function toggleSelect(product: Product) {
-        setSelected(function (prev) {
-            const already = prev.find(function (p) { return p._id === product._id; });
-            if (already) return prev.filter(function (p) { return p._id !== product._id; });
-            if (prev.length >= 2) return [prev[0], product];
-            return [...prev, product];
+        setSelectedIds(function (prev) {
+            const already = prev.includes(product._id);
+            const next = already
+                ? prev.filter(function (id) { return id != product._id; })
+                : prev.length >= 2
+                    ? [prev[0], product._id]
+                    : [...prev, product._id];
+
+            selectStore.setSelectedIds(next);
+            return next;
         });
     }
 
     function getSelectionIndex(id: string): number {
-        return selected.findIndex(function (p) { return p._id === id; });
+        return selectedIds.findIndex(function (selectedId) { return selectedId == id; });
+    }
+
+    function getSelectedProduct(id: string | undefined): Product | undefined {
+        if (!id) return undefined;
+        return products.find(function (p) { return p._id == id; });
     }
 
     function handleCompare() {
-        if (selected.length != 2) return;
-        router.push({ pathname: "/compare", params: { id1: selected[0]._id, id2: selected[1]._id } });
+        if (selectedIds.length != 2) return;
+        router.push({ pathname: "/compare", params: { id1: selectedIds[0], id2: selectedIds[1] } });
     }
 
     const s = makeStyles(colors);
@@ -161,9 +166,9 @@ export default function Search() {
                 <View style={s.headerText}>
                     <Text style={s.title}>{category}</Text>
                     <Text style={s.hint}>
-                        {selected.length == 0 && "Seleziona due prodotti da confrontare"}
-                        {selected.length == 1 && "Seleziona ancora un prodotto"}
-                        {selected.length == 2 && "Pronti per il confronto!"}
+                        {selectedIds.length == 0 && "Seleziona due prodotti da confrontare"}
+                        {selectedIds.length == 1 && "Seleziona ancora un prodotto"}
+                        {selectedIds.length == 2 && "Pronti per il confronto!"}
                     </Text>
                 </View>
             </View>
@@ -186,14 +191,8 @@ export default function Search() {
             <FlatList
                 data={products}
                 keyExtractor={function (item) { return item._id; }}
-                contentContainerStyle={{ paddingBottom: selected.length > 0 ? 150 : 24 }}
+                contentContainerStyle={{ paddingBottom: selectedIds.length > 0 ? 150 : 24 }}
                 showsVerticalScrollIndicator={false}
-                ref={listRef}
-                onScrollToIndexFailed={function (info) {
-                    setTimeout(function () {
-                        listRef.current?.scrollToIndex({ index: info.index, animated: true });
-                    }, 500);
-                }}
                 renderItem={function ({ item }) {
                     const selIndex = getSelectionIndex(item._id);
                     const isSelected = selIndex !== -1;
@@ -217,7 +216,10 @@ export default function Search() {
                                         {refreshingId === item._id
                                             ? <ActivityIndicator size="small" color={colors.lime} />
                                             : <TouchableOpacity
-                                                onPress={function () { handleRefreshPrice(item); }}
+                                                onPress={function (e) {
+                                                    e.stopPropagation();
+                                                    handleRefreshPrice(item);
+                                                }}
                                                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                                             >
                                                 <Ionicons name="refresh-outline" size={15} color={colors.textDim} />
@@ -238,7 +240,8 @@ export default function Search() {
                                     {/* ⓘ info prodotto */}
                                     <TouchableOpacity
                                         style={s.iconCircle}
-                                        onPress={function () {
+                                        onPress={function (e) {
+                                            e.stopPropagation();
                                             router.push({ pathname: "/products/[id]", params: { id: item._id } });
                                         }}
                                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
@@ -248,7 +251,10 @@ export default function Search() {
 
                                     {/* ♥ preferiti */}
                                     <TouchableOpacity
-                                        onPress={function () { handleToggleFavorite(item._id); }}
+                                        onPress={function (e) {
+                                            e.stopPropagation();
+                                            handleToggleFavorite(item._id);
+                                        }}
                                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                                     >
                                         <Ionicons
@@ -271,14 +277,16 @@ export default function Search() {
             />
 
             {/* ── Barra confronto sticky ────────────────────── */}
-            {selected.length > 0 && (
+            {selectedIds.length > 0 && (
                 <View style={s.compareBar}>
                     <View style={s.compareSlots}>
-                        <View style={[s.slot, selected[0] && s.slotFilled]}>
-                            {selected[0] ? (
+                        <View style={[s.slot, selectedIds[0] && s.slotFilled]}>
+                            {selectedIds[0] ? (
                                 <>
                                     <Text style={s.slotNumber}>①</Text>
-                                    <Text style={s.slotName} numberOfLines={1}>{selected[0].name}</Text>
+                                    <Text style={s.slotName} numberOfLines={1}>
+                                        {getSelectedProduct(selectedIds[0])?.name ?? "Prodotto selezionato"}
+                                    </Text>
                                 </>
                             ) : (
                                 <Ionicons name="add-circle-outline" size={22} color={colors.textDim} />
@@ -287,11 +295,13 @@ export default function Search() {
 
                         <Text style={s.vsText}>VS</Text>
 
-                        <View style={[s.slot, selected[1] && s.slotFilled]}>
-                            {selected[1] ? (
+                        <View style={[s.slot, selectedIds[1] && s.slotFilled]}>
+                            {selectedIds[1] ? (
                                 <>
                                     <Text style={s.slotNumber}>②</Text>
-                                    <Text style={s.slotName} numberOfLines={1}>{selected[1].name}</Text>
+                                    <Text style={s.slotName} numberOfLines={1}>
+                                        {getSelectedProduct(selectedIds[1])?.name ?? "Prodotto selezionato"}
+                                    </Text>
                                 </>
                             ) : (
                                 <Ionicons name="add-circle-outline" size={22} color={colors.textDim} />
@@ -300,9 +310,9 @@ export default function Search() {
                     </View>
 
                     <TouchableOpacity
-                        style={[s.compareBtn, selected.length < 2 && s.compareBtnDisabled]}
+                        style={[s.compareBtn, selectedIds.length < 2 && s.compareBtnDisabled]}
                         onPress={handleCompare}
-                        disabled={selected.length < 2}
+                        disabled={selectedIds.length < 2}
                         activeOpacity={0.85}
                     >
                         <Ionicons name="git-compare-outline" size={18} color={colors.textInverse} style={{ marginRight: 8 }} />
