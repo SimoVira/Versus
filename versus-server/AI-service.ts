@@ -88,7 +88,8 @@ assicurati che tutte le virgolette interne siano scappate correttamente.
             const response = result.response;
 
             // Estrazione testo dalla risposta Vertex AI
-            const raw = response.candidates?.[0]?.content?.parts?.[0]?.text;
+            const parts = response.candidates?.[0]?.content?.parts ?? [];
+            const raw = parts.find(function (p: any) { return p.text; })?.text;
             console.log("Risposta da Vertex AI ricevuta: ", raw);
 
             if (!raw) {
@@ -139,7 +140,8 @@ Se non trovi un prezzo affidabile rispondi:
             const result = await generativeModel.generateContent(prompt);
             const response = result.response;
 
-            const raw = response.candidates?.[0]?.content?.parts?.[0]?.text;
+            const parts = response.candidates?.[0]?.content?.parts ?? [];
+            const raw = parts.find(function (p: any) { return p.text; })?.text;
             console.log("Risposta prezzo da Vertex AI ricevuta: ", raw);
 
             if (!raw) {
@@ -165,7 +167,7 @@ Se non trovi un prezzo affidabile rispondi:
             const priceRefreshResult: PriceRefreshResult = {
                 price,
                 source: parsed.source ?? null,
-                url: typeof parsed.url === "string" ? parsed.url : null   // ← aggiunto
+                url: typeof parsed.url === "string" ? parsed.url : null
             };
 
             return priceRefreshResult;

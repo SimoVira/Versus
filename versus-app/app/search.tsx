@@ -30,24 +30,25 @@ export default function Search() {
         loadFavorites();
     }, [category]);
 
+    useEffect(function () {
+        if (!preselectId || products.length === 0 || selected.length > 0) return;
+        const preselectedProduct = products.find(function (p) { return p._id === preselectId; });
+        if (preselectedProduct) setSelected([preselectedProduct]);
+    }, [preselectId, products]);
+
     async function loadProducts() {
         setLoading(true);
         setError("");
         try {
             const data = await productService.getProducts(category, search);
             setProducts(data);
-
-            useEffect(function () {
-                if (!preselectId || products.length === 0 || selected.length > 0) return;
-                const preselectedProduct = products.find(function (p) { return p._id === preselectId; });
-                if (preselectedProduct) setSelected([preselectedProduct]);
-            }, [preselectId, products]);
         } catch (err: any) {
             setError(err.message);
         } finally {
             setLoading(false);
         }
     }
+    
     async function loadFavorites() {
         try {
             const data = await favoritesService.getFavorites();
