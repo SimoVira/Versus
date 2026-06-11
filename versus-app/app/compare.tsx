@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import {
     View, Text, ScrollView, TouchableOpacity,
-    StyleSheet, ActivityIndicator, Animated, StatusBar
+    StyleSheet, ActivityIndicator, Animated, StatusBar, Linking
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -286,8 +286,27 @@ function PriceCard({ colors, product, isWinner }: { colors: any; product: Produc
             padding: 16, alignItems: "center", gap: 6,
         }}>
             {isWinner && <Ionicons name="checkmark-circle" size={18} color={colors.lime} />}
-            <Text style={{ color: colors.textSub, fontSize: 11, textAlign: "center" }} numberOfLines={1}>{product.name}</Text>
-            <Text style={{ fontSize: 24, fontWeight: "800", color: isWinner ? colors.lime : colors.textPrimary }}>€ {product.price}</Text>
+            <Text style={{ color: colors.textSub, fontSize: 11, textAlign: "center" }} numberOfLines={1}>
+                {product.name}
+            </Text>
+            <Text style={{ fontSize: 24, fontWeight: "800", color: isWinner ? colors.lime : colors.textPrimary }}>
+                € {product.price}
+            </Text>
+
+            {product.buyUrl && (
+                <TouchableOpacity
+                    onPress={function () { Linking.openURL(product.buyUrl!); }}
+                    style={{
+                        flexDirection: "row", alignItems: "center", gap: 5,
+                        backgroundColor: colors.lime, borderRadius: 8,
+                        paddingHorizontal: 12, paddingVertical: 7, marginTop: 4,
+                    }}
+                    activeOpacity={0.85}
+                >
+                    <Ionicons name="cart-outline" size={13} color={"#000"} />
+                    <Text style={{ color: "#000", fontSize: 12, fontWeight: "800" }}>Acquista</Text>
+                </TouchableOpacity>
+            )}
         </View>
     );
 }

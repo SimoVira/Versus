@@ -20,6 +20,7 @@ export interface CompareResponse {
 export interface PriceRefreshResult {
     price: number | null;
     source: string | null;
+    url: string | null;
 }
 
 export class AiService {
@@ -124,9 +125,9 @@ assicurati che tutte le virgolette interne siano scappate correttamente.
 Cerca il prezzo attuale di "${searchQuery}" su Google Shopping o siti e-commerce italiani
 (Amazon.it, Unieuro, MediaWorld, eBay.it, ecc.).
 Rispondi SOLO con un oggetto JSON valido, senza markdown, senza spiegazioni:
-{"price": <numero in EUR oppure null>, "source": "<nome del sito oppure null>"}
+{"price": <numero in EUR oppure null>, "source": "<nome del sito oppure null>", "url": "<URL diretto al prodotto oppure null>"}
 Se non trovi un prezzo affidabile rispondi:
-{"price": null, "source": null}
+{"price": null, "source": null, "url": null}
 `.trim();
 
         try {
@@ -163,7 +164,8 @@ Se non trovi un prezzo affidabile rispondi:
 
             const priceRefreshResult: PriceRefreshResult = {
                 price,
-                source: parsed.source ?? null
+                source: parsed.source ?? null,
+                url: typeof parsed.url === "string" ? parsed.url : null   // ← aggiunto
             };
 
             return priceRefreshResult;

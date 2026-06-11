@@ -24,6 +24,7 @@ export default function Search() {
     const [selected, setSelected] = useState<Product[]>([]);
     const [favorites, setFavorites] = useState<Set<string>>(new Set());
 
+    //quando cambia category, ricarica i prodotti e i preferiti
     useEffect(function () {
         loadProducts();
         loadFavorites();
@@ -36,10 +37,11 @@ export default function Search() {
             const data = await productService.getProducts(category, search);
             setProducts(data);
 
-            if (preselectId && selected.length == 0) {
-                const preselectedProduct = data.find(function (p) { return p._id == preselectId; });
+            useEffect(function () {
+                if (!preselectId || products.length === 0 || selected.length > 0) return;
+                const preselectedProduct = products.find(function (p) { return p._id === preselectId; });
                 if (preselectedProduct) setSelected([preselectedProduct]);
-            }
+            }, [preselectId, products]);
         } catch (err: any) {
             setError(err.message);
         } finally {

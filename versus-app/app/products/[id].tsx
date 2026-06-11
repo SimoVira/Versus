@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import {
     View, Text, StyleSheet,
-    ActivityIndicator, TouchableOpacity, Image,
-    Dimensions, Animated, StatusBar
+    ActivityIndicator, TouchableOpacity,
+    Dimensions, Animated, StatusBar, Linking
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -28,6 +28,7 @@ export default function ProductDetail() {
     const [isFavorite, setIsFavorite] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [refreshResult, setRefreshResult] = useState<{ ok: boolean; text: string } | null>(null);
+    const [buyUrl, setBuyUrl] = useState<string | null>(product?.buyUrl ?? null);
     const fadeIn = useRef(new Animated.Value(0)).current;
 
     useEffect(function () {
@@ -35,6 +36,7 @@ export default function ProductDetail() {
         productService.getProductById(id)
             .then(function (data) {
                 setProduct(data);
+                setBuyUrl(data.buyUrl ?? null);
                 return favoritesService.isFavorite(id);
             })
             .then(function (fav) {
@@ -63,10 +65,18 @@ export default function ProductDetail() {
             .then(function (priceRefreshResponse: PriceRefreshResponse) {
                 setProduct(function (prev) {
                     if (!prev) return prev;
-                    prev.priceHistory.push(priceRefreshResponse.addedPriceHistory);
-                    return { ...prev, price: priceRefreshResponse.price };
+                    return {
+                        ...prev,
+                        price: priceRefreshResponse.price,
+                        priceHistory: priceRefreshResponse.addedPriceHistory //nuovo price history
+                            ? [...prev.priceHistory, priceRefreshResponse.addedPriceHistory]
+                            : prev.priceHistory
+                    };
                 });
-                setRefreshResult({ ok: true, text: `€ ${priceRefreshResponse.price.toFixed(2)} · ${priceRefreshResponse.source}` });
+                setRefreshResult({
+                    ok: true,
+                    text: `€ ${priceRefreshResponse.price.toFixed(2)} · ${priceRefreshResponse.source}`
+                });
             })
             .catch(function (err) {
                 setRefreshResult({ ok: false, text: err.message ?? "Errore di rete" });
@@ -157,6 +167,17 @@ export default function ProductDetail() {
                                 {refreshResult.ok ? `Prezzo aggiornato: ${refreshResult.text}` : refreshResult.text}
                             </Text>
                         </View>
+                    )}
+
+                    {buyUrl && (
+                        <TouchableOpacity
+                            style={s.buyBtn}
+                            onPress={function () { Linking.openURL(buyUrl!); }}
+                            activeOpacity={0.85}
+                        >
+                            <Ionicons name="cart-outline" size={16} color={"#000"} />
+                            <Text style={s.buyBtnText}>Acquista ora</Text>
+                        </TouchableOpacity>
                     )}
                 </View>
 
@@ -295,6 +316,12 @@ function makeStyles(C: ReturnType<typeof useTheme>["colors"]) {
         refreshResultOk: { backgroundColor: `${C.lime}18` },
         refreshResultErr: { backgroundColor: `${C.red}18` },
         refreshResultText: { fontSize: 12, fontWeight: "600", flexShrink: 1 },
+        buyBtn: {
+            flexDirection: "row", alignItems: "center", justifyContent: "center",
+            gap: 8, backgroundColor: C.lime,
+            borderRadius: 10, paddingVertical: 12, marginTop: 8,
+        },
+        buyBtnText: { color: "#000", fontSize: 14, fontWeight: "800" },
 
         // Section label
         sectionLabelRow: { flexDirection: "row", alignItems: "center", marginVertical: 16 },

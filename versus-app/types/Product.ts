@@ -121,6 +121,7 @@ export interface Product {
     brand: string;
     category: TechCategory;
     price: number;
+    buyUrl?: string | null;
     lastUpdated: string;
     priceHistory: PriceHistory[];
     specs: ProductSpecs;
@@ -147,5 +148,6 @@ export interface CompareResponse {
 export interface PriceRefreshResponse {
     price: number;
     source: string;
+    buyUrl: string | null;
     addedPriceHistory: PriceHistory;
 }
