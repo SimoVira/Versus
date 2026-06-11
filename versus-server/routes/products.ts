@@ -79,13 +79,16 @@ router.patch("/:id/refresh-price", async function (req, res) {
                 price: priceRefreshResult.price,
                 source: priceRefreshResult.source ?? "gemini-grounding",
                 addedPriceHistory: newPrice,
-                buyUrl: priceRefreshResult.url ?? null 
+                buyUrl: priceRefreshResult.url ?? null
             });
         });
         cmd2.catch(function (err: any) { console.error("Errore aggiornamento MongoDB:", err); });
         cmd2.finally(function () { client.close(); });
     });
-    cmd1.catch(function (err) { res.status(500).send({ error: "Errore interno del server" }); });
+    cmd1.catch(function (err) {
+        res.status(500).send({ error: "Errore interno del server" });
+        client.close();
+    });
 });
 
 export default router;

@@ -126,9 +126,8 @@ Cerca il prezzo attuale di "${searchQuery}" su siti e-commerce italiani.
 Usa SOLO questi siti: amazon.it, unieuro.it, mediaworld.it, ebay.it, euronics.it.
 Trova il link diretto alla pagina del prodotto su uno di questi siti.
 Rispondi SOLO con un oggetto JSON valido, senza markdown, senza spiegazioni:
-{"price": <numero in EUR oppure null>, "source": "<nome del sito oppure null>", "url": "<URL diretto alla pagina prodotto su sito .it oppure null>"}
-Se non trovi un prezzo affidabile su siti italiani rispondi:
-{"price": null, "source": null, "url": null}
+{"price": <numero in EUR oppure null>, "source": "<nome dominio .it oppure null>"}
+Se non trovi un prezzo affidabile: {"price": null, "source": null}
 `.trim();
 
         try {
@@ -167,7 +166,7 @@ Se non trovi un prezzo affidabile su siti italiani rispondi:
             const priceRefreshResult: PriceRefreshResult = {
                 price,
                 source: parsed.source ?? null,
-                url: typeof parsed.url === "string" ? parsed.url : null
+                url: this.buildBuyUrl(parsed.source, searchQuery)
             };
 
             return priceRefreshResult;
@@ -176,4 +175,16 @@ Se non trovi un prezzo affidabile su siti italiani rispondi:
             throw new Error(`Errore durante l'aggiornamento prezzo AI: ${error.message}`);
         }
     }
+
+    private buildBuyUrl(source: string | null, searchQuery: string): string | null {
+        if (!source) return null;
+        const q = encodeURIComponent(searchQuery);
+        if (source.includes("amazon")) return `https://www.amazon.it/s?k=${q}`;
+        if (source.includes("unieuro")) return `https://www.unieuro.it/online/search?q=${q}`;
+        if (source.includes("mediaworld")) return `https://www.mediaworld.it/it/search.html?q=${q}`;
+        if (source.includes("euronics")) return `https://www.euronics.it/search?q=${q}`;
+        if (source.includes("ebay")) return `https://www.ebay.it/sch/i.html?_nkw=${q}`;
+        return null;
+    }
 }
+

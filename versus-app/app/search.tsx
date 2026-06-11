@@ -9,6 +9,7 @@ import { ProductService } from "../api/product-service";
 import { FavoritesService } from "../api/favorites-service";
 import { Product } from "../types/Product";
 import { useTheme } from "../theme";
+import { selectStore } from "./api/selectStore";
 
 export default function Search() {
     const router = useRouter();
@@ -32,6 +33,18 @@ export default function Search() {
         loadProducts();
         loadFavorites();
     }, [category]);
+
+    // quando cambia il vettore selected, scrolla al primo prodotto selezionato
+    useFocusEffect(useCallback(function () {
+        const pendingId = selectStore.get();
+        if (!pendingId || products.length === 0) return; // ← solo se vengo da dettaglio
+        const index = products.findIndex(function (p) { return p._id === selected[0]?._id; });
+        if (index > 0) {
+            setTimeout(function () {
+                listRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.3 });
+            }, 300);
+        }
+    }, [products, selected]));
 
     useEffect(function () {
         if (!preselectId || products.length === 0) return;
@@ -59,17 +72,6 @@ export default function Search() {
             setLoading(false);
         }
     }
-
-    // quando cambia il vettore selected, scrolla al primo prodotto selezionato
-    useFocusEffect(useCallback(function () {
-        if (selected.length == 0 || products.length == 0) return;
-        const index = products.findIndex(function (p) { return p._id == selected[0]._id; });
-        if (index > 0) {
-            setTimeout(function () {
-                listRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.3 });
-            }, 300);
-        }
-    }, [selected, products]));
 
     async function loadFavorites() {
         try {

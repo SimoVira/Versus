@@ -10,6 +10,7 @@ import { useTheme } from "../../theme";
 import { ProductService } from "../../api/product-service";
 import { FavoritesService } from "../../api/favorites-service";
 import { Product, PriceRefreshResponse } from "../../types/Product";
+import { selectStore } from "../api/selectStore";
 
 const { width } = Dimensions.get("window");
 
@@ -29,6 +30,7 @@ export default function ProductDetail() {
     const [refreshing, setRefreshing] = useState(false);
     const [refreshResult, setRefreshResult] = useState<{ ok: boolean; text: string } | null>(null);
     const [buyUrl, setBuyUrl] = useState<string | null>(product?.buyUrl ?? null);
+
     const fadeIn = useRef(new Animated.Value(0)).current;
 
     useEffect(function () {
@@ -68,15 +70,13 @@ export default function ProductDetail() {
                     return {
                         ...prev,
                         price: priceRefreshResponse.price,
-                        priceHistory: priceRefreshResponse.addedPriceHistory //nuovo price history
+                        priceHistory: priceRefreshResponse.addedPriceHistory
                             ? [...prev.priceHistory, priceRefreshResponse.addedPriceHistory]
                             : prev.priceHistory
                     };
                 });
-                setRefreshResult({
-                    ok: true,
-                    text: `€ ${priceRefreshResponse.price.toFixed(2)} · ${priceRefreshResponse.source}`
-                });
+                setBuyUrl(priceRefreshResponse.buyUrl ?? null); 
+                setRefreshResult({ ok: true, text: `€ ${priceRefreshResponse.price.toFixed(2)} · ${priceRefreshResponse.source}` });
             })
             .catch(function (err) {
                 setRefreshResult({ ok: false, text: err.message ?? "Errore di rete" });
@@ -224,11 +224,8 @@ export default function ProductDetail() {
                 <TouchableOpacity
                     style={s.compareBtn}
                     onPress={function () {
-                        //navigate mantiene lo stato della pagina, push no.
-                        router.navigate({
-                            pathname: "/search",
-                            params: { category: product.category, preselectId: product._id }
-                        });
+                        selectStore.set(product._id);
+                        router.back();
                     }}
                     activeOpacity={0.85}
                 >
