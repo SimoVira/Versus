@@ -224,7 +224,8 @@ export default function ProductDetail() {
                 <TouchableOpacity
                     style={s.compareBtn}
                     onPress={function () {
-                        router.push({
+                        //navigate mantiene lo stato della pagina, push no.
+                        router.navigate({
                             pathname: "/search",
                             params: { category: product.category, preselectId: product._id }
                         });

@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import {
     View, Text, FlatList, TouchableOpacity,
     StyleSheet, ActivityIndicator, TextInput, StatusBar
 } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
+import { useRouter, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { ProductService } from "../api/product-service";
 import { FavoritesService } from "../api/favorites-service";
@@ -23,6 +23,9 @@ export default function Search() {
     const [error, setError] = useState<string>("");
     const [selected, setSelected] = useState<Product[]>([]);
     const [favorites, setFavorites] = useState<Set<string>>(new Set());
+    const [refreshingId, setRefreshingId] = useState<string | null>(null);
+
+    const listRef = useRef<FlatList>(null);
 
     //quando cambia category, ricarica i prodotti e i preferiti
     useEffect(function () {
@@ -31,9 +34,17 @@ export default function Search() {
     }, [category]);
 
     useEffect(function () {
-        if (!preselectId || products.length === 0 || selected.length > 0) return;
-        const preselectedProduct = products.find(function (p) { return p._id === preselectId; });
-        if (preselectedProduct) setSelected([preselectedProduct]);
+        if (!preselectId || products.length === 0) return;
+        const alreadySelected = selected.find(function (p) { return p._id == preselectId; });
+        if (alreadySelected) return;
+
+        const preselectedProduct = products.find(function (p) { return p._id == preselectId; });
+        if (!preselectedProduct) return;
+
+        setSelected(function (prev) {
+            if (prev.length >= 2) return [prev[0], preselectedProduct];
+            return [...prev, preselectedProduct];
+        });
     }, [preselectId, products]);
 
     async function loadProducts() {
@@ -48,7 +59,18 @@ export default function Search() {
             setLoading(false);
         }
     }
-    
+
+    // quando cambia il vettore selected, scrolla al primo prodotto selezionato
+    useFocusEffect(useCallback(function () {
+        if (selected.length == 0 || products.length == 0) return;
+        const index = products.findIndex(function (p) { return p._id == selected[0]._id; });
+        if (index > 0) {
+            setTimeout(function () {
+                listRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.3 });
+            }, 300);
+        }
+    }, [selected, products]));
+
     async function loadFavorites() {
         try {
             const data = await favoritesService.getFavorites();
@@ -70,6 +92,23 @@ export default function Search() {
         }
     }
 
+    async function handleRefreshPrice(product: Product) {
+        setRefreshingId(product._id);
+        try {
+            const result = await productService.refreshPrice(product._id);
+            setProducts(function (prev) {
+                return prev.map(function (p) {
+                    if (p._id !== product._id) return p;
+                    return { ...p, price: result.price, buyUrl: result.buyUrl ?? p.buyUrl };
+                });
+            });
+        } catch (err: any) {
+            console.error("Refresh price error:", err.message);
+        } finally {
+            setRefreshingId(null);
+        }
+    }
+
     function toggleSelect(product: Product) {
         setSelected(function (prev) {
             const already = prev.find(function (p) { return p._id === product._id; });
@@ -84,7 +123,7 @@ export default function Search() {
     }
 
     function handleCompare() {
-        if (selected.length !== 2) return;
+        if (selected.length != 2) return;
         router.push({ pathname: "/compare", params: { id1: selected[0]._id, id2: selected[1]._id } });
     }
 
@@ -147,6 +186,12 @@ export default function Search() {
                 keyExtractor={function (item) { return item._id; }}
                 contentContainerStyle={{ paddingBottom: selected.length > 0 ? 150 : 24 }}
                 showsVerticalScrollIndicator={false}
+                ref={listRef}
+                onScrollToIndexFailed={function (info) {
+                    setTimeout(function () {
+                        listRef.current?.scrollToIndex({ index: info.index, animated: true });
+                    }, 500);
+                }}
                 renderItem={function ({ item }) {
                     const selIndex = getSelectionIndex(item._id);
                     const isSelected = selIndex !== -1;
@@ -165,7 +210,18 @@ export default function Search() {
                                 <View style={s.cardInfo}>
                                     <Text style={s.brand}>{item.brand.toUpperCase()}</Text>
                                     <Text style={s.name}>{item.name}</Text>
-                                    <Text style={s.price}>€ {item.price}</Text>
+                                    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+                                        <Text style={s.price}>€ {item.price}</Text>
+                                        {refreshingId === item._id
+                                            ? <ActivityIndicator size="small" color={colors.lime} />
+                                            : <TouchableOpacity
+                                                onPress={function () { handleRefreshPrice(item); }}
+                                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                            >
+                                                <Ionicons name="refresh-outline" size={15} color={colors.textDim} />
+                                            </TouchableOpacity>
+                                        }
+                                    </View>
                                 </View>
 
                                 <View style={s.rightColumn}>

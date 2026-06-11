@@ -121,13 +121,13 @@ assicurati che tutte le virgolette interne siano scappate correttamente.
 
 
     async refreshProductPrice(searchQuery: string): Promise<PriceRefreshResult> {
-
         const prompt = `
-Cerca il prezzo attuale di "${searchQuery}" su Google Shopping o siti e-commerce italiani
-(Amazon.it, Unieuro, MediaWorld, eBay.it, ecc.).
+Cerca il prezzo attuale di "${searchQuery}" su siti e-commerce italiani.
+Usa SOLO questi siti: amazon.it, unieuro.it, mediaworld.it, ebay.it, euronics.it.
+Trova il link diretto alla pagina del prodotto su uno di questi siti.
 Rispondi SOLO con un oggetto JSON valido, senza markdown, senza spiegazioni:
-{"price": <numero in EUR oppure null>, "source": "<nome del sito oppure null>", "url": "<URL diretto al prodotto oppure null>"}
-Se non trovi un prezzo affidabile rispondi:
+{"price": <numero in EUR oppure null>, "source": "<nome del sito oppure null>", "url": "<URL diretto alla pagina prodotto su sito .it oppure null>"}
+Se non trovi un prezzo affidabile su siti italiani rispondi:
 {"price": null, "source": null, "url": null}
 `.trim();
 
