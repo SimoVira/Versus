@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import {
     View, Text, FlatList, TouchableOpacity,
-    StyleSheet, ActivityIndicator, TextInput, StatusBar
+    StyleSheet, ActivityIndicator, TextInput, StatusBar, BackHandler
 } from "react-native";
 import { useFocusEffect, useRouter, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -14,7 +14,7 @@ import { selectStore } from "./api/selectStore";
 export default function Search() {
     const router = useRouter();
     const { colors, isDark } = useTheme();
-    const { category, preselectId } = useLocalSearchParams<{ category: string; preselectId?: string }>();
+    const { category } = useLocalSearchParams<{ category: string }>();
     const productService = new ProductService();
     const favoritesService = new FavoritesService();
 
@@ -33,23 +33,10 @@ export default function Search() {
     }, [category]);
 
     useFocusEffect(useCallback(function () {
-        const pendingId = selectStore.get();
         if (products.length === 0) return;
-
-        //quando si torna da [id] con un prodotto selezionato (salvato in selectStore), aggiungilo alla selezione corrente (se non c'è già)
-        if (pendingId) {
-            selectStore.addSelectedId(pendingId);
-            selectStore.set(null);
-        }
-
+        
         syncSelectedFromStore();
     }, [products]));
-
-    useEffect(function () {
-        if (!preselectId || products.length === 0) return;
-        selectStore.addSelectedId(preselectId);
-        syncSelectedFromStore();
-    }, [preselectId, products]);
 
     function syncSelectedFromStore() {
         setSelectedIds(selectStore.getSelectedIds());
@@ -131,8 +118,28 @@ export default function Search() {
 
     function handleCompare() {
         if (selectedIds.length != 2) return;
-        router.push({ pathname: "/compare", params: { id1: selectedIds[0], id2: selectedIds[1] } });
+        const [id1, id2] = selectedIds;
+        selectStore.reset();
+        setSelectedIds([]);
+        router.push({ pathname: "/compare", params: { id1, id2 } });
     }
+
+    function handleBack() {
+        selectStore.reset();
+        setSelectedIds([]);
+        router.navigate("/home");
+    }
+
+    useFocusEffect(useCallback(function () {
+        const subscription = BackHandler.addEventListener("hardwareBackPress", function () {
+            handleBack();
+            return true;
+        });
+
+        return function () {
+            subscription.remove();
+        };
+    }, []));
 
     const s = makeStyles(colors);
 
@@ -160,7 +167,7 @@ export default function Search() {
 
             {/* ── Header ───────────────────────────────────── */}
             <View style={s.header}>
-                <TouchableOpacity onPress={() => router.navigate("/home")} style={s.iconBtn}>
+                <TouchableOpacity onPress={handleBack} style={s.iconBtn}>
                     <Ionicons name="arrow-back" size={22} color={colors.textSub} />
                 </TouchableOpacity>
                 <View style={s.headerText}>

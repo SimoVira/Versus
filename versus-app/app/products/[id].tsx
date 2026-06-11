@@ -224,7 +224,7 @@ export default function ProductDetail() {
                 <TouchableOpacity
                     style={s.compareBtn}
                     onPress={function () {
-                        selectStore.set(product._id);
+                        selectStore.addSelectedId(product._id);
                         router.back();
                     }}
                     activeOpacity={0.85}

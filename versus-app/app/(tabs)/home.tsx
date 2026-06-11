@@ -10,6 +10,7 @@ import { CategoryService } from "../../api/category-service";
 import { TechCategory } from "../../types/Product";
 import { AuthService } from "../../api/auth-service";
 import { useTheme } from "../../theme";
+import { selectStore } from "../api/selectStore";
 
 // ── Icone per categoria ───────────────────────────────────────
 const CATEGORY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -133,6 +134,7 @@ export default function Home() {
                         <TouchableOpacity
                             style={s.card}
                             onPress={function () {
+                                selectStore.reset();
                                 router.push({ pathname: "/search", params: { category: item } });
                             }}
                             activeOpacity={0.75}
