@@ -124,6 +124,7 @@ assicurati che tutte le virgolette interne siano scappate correttamente.
         const prompt = `
 Cerca il prezzo attuale di "${searchQuery}" su siti e-commerce italiani.
 Usa SOLO questi siti: amazon.it, unieuro.it, mediaworld.it, ebay.it, euronics.it.
+Non usare idealo.it o altri siti non ammessi.
 Trova il link diretto alla pagina del prodotto su uno di questi siti.
 Rispondi SOLO con un oggetto JSON valido, senza markdown, senza spiegazioni:
 {"price": <numero in EUR oppure null>, "source": "<nome dominio .it oppure null>"}
