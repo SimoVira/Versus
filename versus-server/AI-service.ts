@@ -162,10 +162,11 @@ Se non trovi nessun prezzo affidabile: {"price": null, "source": null}
                 price = Number.isFinite(numericPrice) ? numericPrice : null;
             }
 
+            const url = this.buildBuyUrl(parsed.source, searchQuery);
             const priceRefreshResult: PriceRefreshResult = {
                 price,
-                source: parsed.source ?? null,
-                url: this.buildBuyUrl(parsed.source, searchQuery)
+                source: url ? new URL(url).hostname.replace("www.", "") : null,
+                url
             };
 
             return priceRefreshResult;
@@ -177,7 +178,7 @@ Se non trovi nessun prezzo affidabile: {"price": null, "source": null}
 
     private buildBuyUrl(source: string | null, searchQuery: string): string | null {
         const q = encodeURIComponent(searchQuery);
-        if (!source) return `https://www.amazon.it/s?k=${q}`;
+        if (!source) return null;
 
         // Siti e-commerce italiani approvati
         if (source.includes("amazon")) return `https://www.amazon.it/s?k=${q}`;
@@ -195,7 +196,7 @@ Se non trovi nessun prezzo affidabile: {"price": null, "source": null}
             return `https://${source}`;
         }
 
-        // Qualsiasi altra fonte (idealo, trovaprezzi, ecc.) → fallback amazon
+        // Qualsiasi altra fonte (idealo, ecc.) → fallback amazon
         return `https://www.amazon.it/s?k=${q}`;
     }
 }
