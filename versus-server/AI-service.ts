@@ -185,6 +185,7 @@ Se non trovi nessun prezzo affidabile: {"price": null, "source": null}
         if (source.includes("mediaworld")) return `https://www.mediaworld.it/it/search.html?q=${q}`;
         if (source.includes("euronics")) return `https://www.euronics.it/search?q=${q}`;
         if (source.includes("ebay")) return `https://www.ebay.it/sch/i.html?_nkw=${q}`;
+        if (source.includes("trovaprezzi")) return `https://www.trovaprezzi.it/categoria?q=${q}`;
 
         // Siti del produttore
         const manufacturerSites = ["apple.com", "samsung.com", "microsoft.com", "sony.com",
