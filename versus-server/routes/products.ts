@@ -43,27 +43,35 @@ router.get("/:id", async function (req, res) {
 router.patch("/:id/refresh-price", async function (req, res) {
     const id = req.params.id;
     const client = new MongoClient(connectionString);
-    await client.connect().catch(function () {
-        res.status(503).send({ err: "Errore di connessione al dbms" });
-        return;
-    });
-    const collection = client.db(dbName).collection("products");
-    const cmd1 = collection.findOne({ _id: new ObjectId(id) });
-    cmd1.then(async function (product) {
-        if (!product) { res.status(404).send({ error: "Prodotto non trovato" }); return; }
+    try {
+        if (!ObjectId.isValid(id)) {
+            res.status(400).send({ error: "ID prodotto non valido" });
+            return;
+        }
+
+        await client.connect();
+        const collection = client.db(dbName).collection("products");
+        const product = await collection.findOne({ _id: new ObjectId(id) });
+
+        if (!product) {
+            res.status(404).send({ error: "Prodotto non trovato" });
+            return;
+        }
+
         const priceRefreshResult = await aiService.refreshProductPrice(product.searchQuery);
         if (priceRefreshResult.price == null) {
             res.status(200).send({ price: product.price, source: "prezzo precedente, aggiornamento fallito" });
-            client.close();
             return;
         }
+
         const now = new Date();
         const newPrice = {
             price: priceRefreshResult.price,
             date: now.toISOString().split("T")[0],
             source: priceRefreshResult.source ?? "gemini-grounding",
         };
-        const cmd2 = collection.updateOne(
+
+        await collection.updateOne(
             { _id: new ObjectId(id) },
             {
                 $set: {
@@ -74,21 +82,21 @@ router.patch("/:id/refresh-price", async function (req, res) {
                 $push: { priceHistory: newPrice } as any
             }
         );
-        cmd2.then(function () {
-            res.status(200).send({
-                price: priceRefreshResult.price,
-                source: priceRefreshResult.source ?? "gemini-grounding",
-                addedPriceHistory: newPrice,
-                buyUrl: priceRefreshResult.url ?? null
-            });
+
+        res.status(200).send({
+            price: priceRefreshResult.price,
+            source: priceRefreshResult.source ?? "gemini-grounding",
+            addedPriceHistory: newPrice,
+            buyUrl: priceRefreshResult.url ?? null
         });
-        cmd2.catch(function (err: any) { console.error("Errore aggiornamento MongoDB:", err); });
-        cmd2.finally(function () { client.close(); });
-    });
-    cmd1.catch(function (err) {
-        res.status(500).send({ error: "Errore interno del server" });
-        client.close();
-    });
+    } catch (err: any) {
+        console.error("Errore refresh prezzo:", err);
+        res.status(500).send({ error: "Errore interno durante l'aggiornamento prezzo" });
+    } finally {
+        await client.close().catch(function (err) {
+            console.error("Errore chiusura connessione MongoDB:", err);
+        });
+    }
 });
 
 export default router;

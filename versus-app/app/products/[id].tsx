@@ -71,7 +71,7 @@ export default function ProductDetail() {
                         ...prev,
                         price: priceRefreshResponse.price,
                         priceHistory: priceRefreshResponse.addedPriceHistory
-                            ? [...prev.priceHistory, priceRefreshResponse.addedPriceHistory]
+                            ? [...(prev.priceHistory ?? []), priceRefreshResponse.addedPriceHistory]
                             : prev.priceHistory
                     };
                 });

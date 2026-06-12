@@ -16,6 +16,11 @@ export interface AuthResponse {
     user: User;
 }
 
+function getErrorMessage(res: any, fallback: string): string {
+    const detail = res?.err || res?.data?.err;
+    return detail ? `${fallback}: ${detail}` : fallback;
+}
+
 export class AuthService {
 
     public async register(name: string, email: string, password: string): Promise<AuthResponse> {
@@ -27,7 +32,7 @@ export class AuthService {
         else if (res?.status == 409) {
             throw new Error("Email già registrata");
         }
-        throw new Error(res?.data?.err || "Errore durante la registrazione");
+        throw new Error(getErrorMessage(res, "Errore durante la registrazione"));
     }
 
     public async login(email: string, password: string): Promise<AuthResponse> {
@@ -36,7 +41,7 @@ export class AuthService {
             await this.saveSession(res.data.token, res.data.user);
             return res.data;
         }
-        throw new Error(res?.data?.err || "Credenziali non valide");
+        throw new Error(getErrorMessage(res, "Credenziali non valide"));
     }
 
     public async loginWithGoogle(): Promise<AuthResponse> {

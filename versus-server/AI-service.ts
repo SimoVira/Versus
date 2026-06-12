@@ -122,18 +122,16 @@ assicurati che tutte le virgolette interne siano scappate correttamente.
 
     async refreshProductPrice(searchQuery: string): Promise<PriceRefreshResult> {
         const prompt = `
-Cerca il prezzo attuale di "${searchQuery}" su siti e-commerce italiani.
-Usa SOLO questi siti: amazon.it, unieuro.it, mediaworld.it, ebay.it, euronics.it.
-Non usare idealo.it o altri siti non ammessi.
-Trova il link diretto alla pagina del prodotto su uno di questi siti.
+Cerca il prezzo attuale di "${searchQuery}" su internet.
+Preferisci siti e-commerce italiani o il sito ufficiale del produttore.
 Rispondi SOLO con un oggetto JSON valido, senza markdown, senza spiegazioni:
-{"price": <numero in EUR oppure null>, "source": "<nome dominio .it oppure null>"}
-Se non trovi un prezzo affidabile: {"price": null, "source": null}
+{"price": <numero in EUR oppure null>, "source": "<dominio del sito trovato oppure null>"}
+Se non trovi nessun prezzo affidabile: {"price": null, "source": null}
 `.trim();
 
         try {
             const generativeModel = this.vertexAI.getGenerativeModel({
-                model: "gemini-2.5-flash-lite",
+                model: "gemini-2.5-flash",
                 tools: [{ googleSearch: {} } as any]
             });
 
@@ -172,20 +170,32 @@ Se non trovi un prezzo affidabile: {"price": null, "source": null}
 
             return priceRefreshResult;
         } catch (error: any) {
-            console.error("Errore Vertex AI SDK:", error);
-            throw new Error(`Errore durante l'aggiornamento prezzo AI: ${error.message}`);
+            console.error("Errore aggiornamento prezzo:", error.message);
+            return { price: null, source: null, url: null };
         }
     }
 
     private buildBuyUrl(source: string | null, searchQuery: string): string | null {
-        if (!source) return null;
         const q = encodeURIComponent(searchQuery);
+        if (!source) return `https://www.amazon.it/s?k=${q}`;
+
+        // Siti e-commerce italiani approvati
         if (source.includes("amazon")) return `https://www.amazon.it/s?k=${q}`;
         if (source.includes("unieuro")) return `https://www.unieuro.it/online/search?q=${q}`;
         if (source.includes("mediaworld")) return `https://www.mediaworld.it/it/search.html?q=${q}`;
         if (source.includes("euronics")) return `https://www.euronics.it/search?q=${q}`;
         if (source.includes("ebay")) return `https://www.ebay.it/sch/i.html?_nkw=${q}`;
-        return null;
+
+        // Siti del produttore
+        const manufacturerSites = ["apple.com", "samsung.com", "microsoft.com", "sony.com",
+            "asus.com", "lenovo.com", "lg.com", "huawei.com", "xiaomi.com", "dell.com",
+            "hp.com", "acer.com", "google.com", "oneplus.com", "nothing.tech"];
+        if (manufacturerSites.some(function (s) { return source.includes(s); })) {
+            return `https://${source}`;
+        }
+
+        // Qualsiasi altra fonte (idealo, trovaprezzi, ecc.) → fallback amazon
+        return `https://www.amazon.it/s?k=${q}`;
     }
 }
 
