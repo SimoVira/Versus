@@ -9,7 +9,7 @@ import { ProductService } from "../api/product-service";
 import { FavoritesService } from "../api/favorites-service";
 import { Product } from "../types/Product";
 import { useTheme } from "../theme";
-import { selectStore } from "./api/selectStore";
+import { selectStore } from "../api/selectStore";
 
 export default function Search() {
     const router = useRouter();

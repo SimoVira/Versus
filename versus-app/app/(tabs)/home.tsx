@@ -10,7 +10,7 @@ import { CategoryService } from "../../api/category-service";
 import { TechCategory } from "../../types/Product";
 import { AuthService } from "../../api/auth-service";
 import { useTheme } from "../../theme";
-import { selectStore } from "../api/selectStore";
+import { selectStore } from "../../api/selectStore";
 
 // ── Icone per categoria ───────────────────────────────────────
 const CATEGORY_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {

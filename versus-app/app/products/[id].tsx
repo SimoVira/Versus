@@ -10,7 +10,7 @@ import { useTheme } from "../../theme";
 import { ProductService } from "../../api/product-service";
 import { FavoritesService } from "../../api/favorites-service";
 import { Product, PriceRefreshResponse } from "../../types/Product";
-import { selectStore } from "../api/selectStore";
+import { selectStore } from "../../api/selectStore";
 
 const { width } = Dimensions.get("window");
 
