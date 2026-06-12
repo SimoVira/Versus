@@ -17,7 +17,7 @@ const { width } = Dimensions.get("window");
 export default function ProductDetail() {
     const router = useRouter();
     const { colors, isDark } = useTheme();
-    const { id } = useLocalSearchParams<{ id: string }>();
+    const { id, source } = useLocalSearchParams<{ id: string; source?: string }>();
     const productService = new ProductService();
     const favoritesService = new FavoritesService();
 
@@ -224,6 +224,13 @@ export default function ProductDetail() {
                 <TouchableOpacity
                     style={s.compareBtn}
                     onPress={function () {
+                        if (source == "favorites") {
+                            selectStore.reset();
+                            selectStore.addSelectedId(product._id);
+                            router.replace({ pathname: "/search", params: { category: product.category } });
+                            return;
+                        }
+
                         selectStore.addSelectedId(product._id);
                         router.back();
                     }}

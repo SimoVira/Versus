@@ -123,7 +123,7 @@ export default function Favorites() {
                                 onPress={function () {
                                     router.push({
                                         pathname: "/products/[id]",
-                                        params: { id: item._id }
+                                        params: { id: item._id, source: "favorites" }
                                     });
                                 }}
                                 activeOpacity={0.75}

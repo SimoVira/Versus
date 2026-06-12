@@ -26,14 +26,14 @@ export default function Search() {
     const [favorites, setFavorites] = useState<Set<string>>(new Set());
     const [refreshingId, setRefreshingId] = useState<string | null>(null);
 
-    //quando cambia category, ricarica i prodotti e i preferiti
+    //quando cambia category
     useEffect(function () {
         loadProducts();
         loadFavorites();
     }, [category]);
 
     useFocusEffect(useCallback(function () {
-        if (products.length === 0) return;
+        if (products.length == 0) return;
         
         syncSelectedFromStore();
     }, [products]));
