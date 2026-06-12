@@ -131,7 +131,7 @@ Se non trovi nessun prezzo affidabile: {"price": null, "source": null}
 
         try {
             const generativeModel = this.vertexAI.getGenerativeModel({
-                model: "gemini-2.5-flash",
+                model: "gemini-2.5-flash-lite",
                 tools: [{ googleSearch: {} } as any]
             });
 
