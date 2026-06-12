@@ -102,7 +102,6 @@ export default function Search() {
                     ? [prev[0], product._id]
                     : [...prev, product._id];
 
-            selectStore.setSelectedIds(next);
             return next;
         });
     }
@@ -249,6 +248,7 @@ export default function Search() {
                                         style={s.iconCircle}
                                         onPress={function (e) {
                                             e.stopPropagation();
+                                            selectStore.setSelectedIds(selectedIds);
                                             router.push({ pathname: "/products/[id]", params: { id: item._id } });
                                         }}
                                         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
